@@ -1,0 +1,12 @@
+Force Vercel Deployment
+=======================
+
+Date: 2025-08-06
+Time: 23:45 UTC
+
+This file triggers a new deployment to ensure Vercel uses the latest commit
+that includes all necessary files:
+- src/index.js (added)
+- webpack.config.js (added)
+
+After this deployment, the build should succeed!
