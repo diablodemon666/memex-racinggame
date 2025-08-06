@@ -5,7 +5,24 @@ All notable changes to Memex Racing will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2025-08-06
+## [Unreleased] - 2025-08-07
+
+### Added
+- **Vercel Deployment Fix** - Resolved production build issues:
+  - Fixed `.vercelignore` configuration blocking source files during build
+  - Removed `src/` directory from ignore list to allow webpack access
+  - Enabled `webpack.config.js` in deployment for build process
+  - Successfully deployed to https://memex-racing-game-diablodemon9966-8930s-projects.vercel.app
+  - Build time reduced to ~1 minute with proper configuration
+
+### Changed
+- Updated `.vercelignore` to support build-time requirements while keeping test files excluded
+
+### Fixed
+- Vercel deployment error "Module not found: Error: Can't resolve './src'" by correcting ignore patterns
+- Build failures caused by missing webpack configuration in deployment
+
+## [0.4.0] - 2025-08-06
 
 ### Added
 - **AnimationManager System** - Centralized UI animation framework:
