@@ -1,11 +1,12 @@
-{
-  "buildCommand": "ls -la && npm install && npm run build",
-  "outputDirectory": "dist",
-  "installCommand": "npm install",
-  "framework": null,
-  "functions": {
-    "api/**/*.js": {
-      "maxDuration": 10
+ {
+    "buildCommand": "npx webpack --config 
+  webpack.vercel.config.js",
+    "outputDirectory": "dist",
+    "installCommand": "npm install",
+    "framework": null,
+    "functions": {
+      "api/**/*.js": {
+        "maxDuration": 10
+      }
     }
   }
-}
