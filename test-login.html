@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Login System</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background-color: #0a0a0a;
+            color: #00ff00;
+            padding: 20px;
+        }
+        
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #00ff00;
+            padding: 30px;
+            border-radius: 10px;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #00ffff;
+        }
+        
+        .section {
+            margin: 30px 0;
+            padding: 20px;
+            background: rgba(0, 255, 0, 0.05);
+            border: 1px solid #333;
+            border-radius: 5px;
+        }
+        
+        .section h2 {
+            color: #00ff00;
+            margin-bottom: 10px;
+        }
+        
+        button {
+            background: #00ff00;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: bold;
+            border-radius: 5px;
+        }
+        
+        button:hover {
+            background: #00cc00;
+        }
+        
+        .output {
+            background: #000;
+            border: 1px solid #444;
+            padding: 15px;
+            margin-top: 10px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        
+        .status.success {
+            background: rgba(0, 255, 0, 0.2);
+            border: 1px solid #00ff00;
+            color: #00ff00;
+        }
+        
+        .status.error {
+            background: rgba(255, 0, 0, 0.2);
+            border: 1px solid #ff0000;
+            color: #ff6666;
+        }
+        
+        a {
+            color: #00ffff;
+            text-decoration: none;
+        }
+        
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 Login System Test Suite</h1>
+        
+        <div class="section">
+            <h2>Navigation</h2>
+            <button onclick="window.location.href='login.html'">Go to Login Page</button>
+            <button onclick="window.location.href='index.html'">Go to Game</button>
+            <button onclick="window.location.href='track-preview-local.html'">Track Preview</button>
+        </div>
+        
+        <div class="section">
+            <h2>Local Storage Inspector</h2>
+            <button onclick="inspectLocalStorage()">Inspect Storage</button>
+            <button onclick="clearLocalStorage()">Clear All Storage</button>
+            <div id="storage-output" class="output"></div>
+        </div>
+        
+        <div class="section">
+            <h2>Test User Accounts</h2>
+            <p>Create test accounts for development:</p>
+            <button onclick="createTestUser('testuser1', 'test1@memex.com', 'Test123!')">Create Test User 1</button>
+            <button onclick="createTestUser('testuser2', 'test2@memex.com', 'Test123!')">Create Test User 2</button>
+            <button onclick="createTestUser('admin', 'admin@memex.com', 'Admin123!')">Create Admin</button>
+            <div id="test-user-output" class="output"></div>
+        </div>
+        
+        <div class="section">
+            <h2>Authentication Status</h2>
+            <button onclick="checkAuthStatus()">Check Auth Status</button>
+            <button onclick="testLogin('testuser1', 'Test123!')">Test Login</button>
+            <button onclick="testLogout()">Test Logout</button>
+            <div id="auth-output" class="output"></div>
+        </div>
+        
+        <div class="section">
+            <h2>System Info</h2>
+            <div id="system-info"></div>
+        </div>
+        
+        <div id="status-message"></div>
+    </div>
+    
+    <script>
+        // Initialize system info
+        document.getElementById('system-info').innerHTML = `
+            <p>Browser: ${navigator.userAgent}</p>
+            <p>Screen: ${screen.width}x${screen.height}</p>
+            <p>Local Storage Available: ${typeof localStorage !== 'undefined' ? 'Yes' : 'No'}</p>
+            <p>IndexedDB Available: ${typeof indexedDB !== 'undefined' ? 'Yes' : 'No'}</p>
+        `;
+        
+        function showStatus(message, type = 'success') {
+            const statusEl = document.getElementById('status-message');
+            statusEl.className = `status ${type}`;
+            statusEl.textContent = message;
+            setTimeout(() => {
+                statusEl.className = '';
+                statusEl.textContent = '';
+            }, 3000);
+        }
+        
+        function inspectLocalStorage() {
+            const output = document.getElementById('storage-output');
+            const keys = Object.keys(localStorage);
+            let content = `Total items: ${keys.length}\n\n`;
+            
+            keys.forEach(key => {
+                const value = localStorage.getItem(key);
+                let displayValue = value;
+                
+                // Try to parse and format JSON
+                try {
+                    const parsed = JSON.parse(value);
+                    displayValue = JSON.stringify(parsed, null, 2);
+                } catch (e) {
+                    // Not JSON, display as is
+                }
+                
+                content += `Key: ${key}\n`;
+                content += `Value: ${displayValue.substring(0, 200)}${displayValue.length > 200 ? '...' : ''}\n`;
+                content += '-'.repeat(50) + '\n';
+            });
+            
+            output.textContent = content || 'Local storage is empty';
+        }
+        
+        function clearLocalStorage() {
+            if (confirm('Are you sure you want to clear all local storage?')) {
+                localStorage.clear();
+                showStatus('Local storage cleared');
+                inspectLocalStorage();
+            }
+        }
+        
+        async function createTestUser(username, email, password) {
+            try {
+                // Simulate user creation
+                const userId = 'test-' + Date.now();
+                const user = {
+                    id: userId,
+                    username: username,
+                    email: email,
+                    createdAt: new Date().toISOString()
+                };
+                
+                // Add to users registry
+                const users = JSON.parse(localStorage.getItem('memex_racing_users') || '[]');
+                users.push(user);
+                localStorage.setItem('memex_racing_users', JSON.stringify(users));
+                
+                // Store password (for testing only)
+                localStorage.setItem(`memex_racing_password_${userId}`, password);
+                
+                const output = document.getElementById('test-user-output');
+                output.textContent = `Created test user:\nUsername: ${username}\nEmail: ${email}\nPassword: ${password}\nID: ${userId}`;
+                
+                showStatus(`Test user '${username}' created successfully`);
+            } catch (error) {
+                showStatus(`Failed to create test user: ${error.message}`, 'error');
+            }
+        }
+        
+        async function checkAuthStatus() {
+            try {
+                const output = document.getElementById('auth-output');
+                const credentials = localStorage.getItem('memex_racing_credentials');
+                const userData = localStorage.getItem('memex_racing_userData');
+                
+                let content = 'Authentication Status:\n\n';
+                
+                if (credentials) {
+                    content += '✅ Credentials found\n';
+                    try {
+                        // Note: Can't decrypt without the auth system
+                        content += 'Credentials are encrypted\n';
+                    } catch (e) {
+                        content += 'Credentials format: Unknown\n';
+                    }
+                } else {
+                    content += '❌ No credentials found\n';
+                }
+                
+                if (userData) {
+                    content += '\n✅ User data found\n';
+                    try {
+                        // Note: Can't decrypt without the auth system
+                        content += 'User data is encrypted\n';
+                    } catch (e) {
+                        content += 'User data format: Unknown\n';
+                    }
+                } else {
+                    content += '\n❌ No user data found\n';
+                }
+                
+                output.textContent = content;
+            } catch (error) {
+                showStatus(`Error checking auth status: ${error.message}`, 'error');
+            }
+        }
+        
+        function testLogin(username, password) {
+            showStatus(`To test login, please use the login page with:\nUsername: ${username}\nPassword: ${password}`, 'success');
+            setTimeout(() => {
+                window.location.href = 'login.html';
+            }, 2000);
+        }
+        
+        function testLogout() {
+            // Clear auth-related storage
+            const keysToRemove = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && (key.includes('memex_racing_credentials') || key.includes('memex_racing_userData'))) {
+                    keysToRemove.push(key);
+                }
+            }
+            
+            keysToRemove.forEach(key => localStorage.removeItem(key));
+            
+            showStatus('Logged out successfully');
+            checkAuthStatus();
+        }
+        
+        // Auto-inspect on load
+        window.addEventListener('DOMContentLoaded', () => {
+            inspectLocalStorage();
+            checkAuthStatus();
+        });
+    </script>
+</body>
+</html>

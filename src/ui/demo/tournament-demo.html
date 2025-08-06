@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tournament UI Demo - Memex Racing</title>
+    <link rel="stylesheet" href="../styles/game-ui.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #000;
+            color: #00ff00;
+            font-family: 'Courier New', 'Monaco', 'Lucida Console', monospace;
+        }
+        
+        .demo-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .demo-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 2px solid #00ff00;
+            border-radius: 8px;
+            background: rgba(0, 255, 0, 0.05);
+        }
+        
+        .demo-section {
+            margin-bottom: 40px;
+            padding: 20px;
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            border-radius: 4px;
+            background: rgba(0, 0, 0, 0.5);
+        }
+        
+        .demo-controls {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .demo-btn {
+            background: rgba(0, 255, 0, 0.2);
+            color: #00ff00;
+            border: 1px solid rgba(0, 255, 0, 0.5);
+            border-radius: 4px;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+        
+        .demo-btn:hover {
+            background: rgba(0, 255, 0, 0.3);
+            border-color: #00ff00;
+        }
+        
+        .demo-description {
+            margin-bottom: 16px;
+            padding: 12px;
+            background: rgba(0, 255, 0, 0.05);
+            border-left: 3px solid #00ff00;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+        
+        .feature-list {
+            list-style: none;
+            padding: 0;
+            margin: 12px 0;
+        }
+        
+        .feature-list li {
+            padding: 4px 0;
+            font-size: 12px;
+        }
+        
+        .feature-list li:before {
+            content: '✓ ';
+            color: #00ff00;
+            font-weight: bold;
+        }
+        
+        .keyboard-shortcuts {
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            border-radius: 4px;
+            padding: 12px;
+            margin-top: 16px;
+        }
+        
+        .shortcut-key {
+            display: inline-block;
+            background: rgba(0, 255, 0, 0.2);
+            color: #00ff00;
+            padding: 2px 6px;
+            border-radius: 2px;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <div class="demo-header">
+            <h1>🏆 Tournament UI Components Demo</h1>
+            <p>Interactive demonstration of the Memex Racing tournament system</p>
+            <p><strong>Note:</strong> These are UI demonstrations - tournament logic requires the full game backend</p>
+        </div>
+
+        <div class="demo-section">
+            <h2>🏁 Tournament Lobby</h2>
+            <div class="demo-description">
+                The tournament lobby allows players to browse, create, and join tournaments. Features include:
+                <ul class="feature-list">
+                    <li>Tournament browser with filtering and search</li>
+                    <li>Tournament creation form with comprehensive settings</li>
+                    <li>Player registration and lobby management</li>
+                    <li>Real-time chat system</li>
+                    <li>Countdown timer for tournament start</li>
+                    <li>Spectator mode for watching tournaments</li>
+                </ul>
+            </div>
+            <div class="demo-controls">
+                <button class="demo-btn" onclick="showTournamentLobby()">Open Tournament Lobby</button>
+                <button class="demo-btn" onclick="loadSampleTournaments()">Load Sample Data</button>
+            </div>
+            <div class="keyboard-shortcuts">
+                <strong>Keyboard Shortcuts:</strong>
+                <span class="shortcut-key">T</span> Toggle Tournament Lobby
+                <span class="shortcut-key">ESC</span> Close
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>🏆 Tournament Bracket</h2>
+            <div class="demo-description">
+                Interactive bracket visualization supporting multiple tournament formats:
+                <ul class="feature-list">
+                    <li>Single elimination bracket trees</li>
+                    <li>Double elimination support</li>
+                    <li>Round robin standings table</li>
+                    <li>Live match results and updates</li>
+                    <li>Zoom and pan controls</li>
+                    <li>Player advancement tracking</li>
+                </ul>
+            </div>
+            <div class="demo-controls">
+                <button class="demo-btn" onclick="showTournamentBracket()">Open Tournament Bracket</button>
+                <button class="demo-btn" onclick="loadSampleBracket()">Load Sample Tournament</button>
+            </div>
+            <div class="keyboard-shortcuts">
+                <strong>Keyboard Shortcuts:</strong>
+                <span class="shortcut-key">G</span> Toggle Tournament Bracket
+                <span class="shortcut-key">+/-</span> Zoom In/Out
+                <span class="shortcut-key">0</span> Center View
+                <span class="shortcut-key">1/2/3</span> Switch Views
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>📊 Tournament Results</h2>
+            <div class="demo-description">
+                Comprehensive results and statistics display:
+                <ul class="feature-list">
+                    <li>Final standings with podium display</li>
+                    <li>Complete match history timeline</li>
+                    <li>Player performance statistics</li>
+                    <li>Prize distribution breakdown</li>
+                    <li>Export capabilities (JSON, CSV, PDF)</li>
+                    <li>Share and print functionality</li>
+                </ul>
+            </div>
+            <div class="demo-controls">
+                <button class="demo-btn" onclick="showTournamentResults()">Open Tournament Results</button>
+                <button class="demo-btn" onclick="loadSampleResults()">Load Sample Results</button>
+            </div>
+            <div class="keyboard-shortcuts">
+                <strong>Keyboard Shortcuts:</strong>
+                <span class="shortcut-key">U</span> Toggle Tournament Results
+                <span class="shortcut-key">1/2/3/4</span> Switch Result Views
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>🎮 Integration Notes</h2>
+            <div class="demo-description">
+                <strong>Tournament System Integration:</strong>
+                <ul class="feature-list">
+                    <li>Components integrate with existing UIManager</li>
+                    <li>Uses established UI patterns and styling</li>
+                    <li>Compatible with current authentication system</li>
+                    <li>Supports real-time multiplayer events</li>
+                    <li>Follows retro pixel art aesthetic</li>
+                    <li>Responsive design for mobile and desktop</li>
+                </ul>
+                
+                <strong>Backend Requirements:</strong>
+                <ul class="feature-list">
+                    <li>Tournament state management and persistence</li>
+                    <li>Player registration and authentication</li>
+                    <li>Real-time WebSocket communication</li>
+                    <li>Match scheduling and execution</li>
+                    <li>Betting system integration (optional)</li>
+                    <li>Prize distribution logic</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tournament Components (will be injected by UIManager) -->
+    <div id="ui-overlay" class="ui-overlay">
+        <div id="tournament-lobby-panel" class="modal-overlay tournament-lobby hidden"></div>
+        <div id="tournament-bracket-panel" class="modal-overlay tournament-bracket hidden"></div>
+        <div id="tournament-results-panel" class="modal-overlay tournament-results hidden"></div>
+    </div>
+
+    <script type="module">
+        // Import tournament components
+        import { TournamentLobby } from '../components/TournamentLobby.js';
+        import { TournamentBracket } from '../components/TournamentBracket.js';
+        import { TournamentResults } from '../components/TournamentResults.js';
+
+        // Create demo UI manager mock
+        const demoUIManager = {
+            emit: (event, data) => console.log('Event:', event, data),
+            tournamentBracket: null,
+            tournamentLobby: null,
+            tournamentResults: null
+        };
+
+        // Initialize components
+        let tournamentLobby, tournamentBracket, tournamentResults;
+
+        async function initializeComponents() {
+            try {
+                tournamentLobby = new TournamentLobby(demoUIManager);
+                tournamentBracket = new TournamentBracket(demoUIManager);
+                tournamentResults = new TournamentResults(demoUIManager);
+
+                await tournamentLobby.initialize();
+                await tournamentBracket.initialize();
+                await tournamentResults.initialize();
+
+                // Make components globally accessible for demo
+                window.tournamentLobby = tournamentLobby;
+                window.tournamentBracket = tournamentBracket;
+                window.tournamentResults = tournamentResults;
+
+                console.log('Tournament components initialized successfully');
+            } catch (error) {
+                console.error('Failed to initialize tournament components:', error);
+            }
+        }
+
+        // Demo functions
+        window.showTournamentLobby = () => {
+            if (tournamentLobby) {
+                tournamentLobby.show();
+            }
+        };
+
+        window.showTournamentBracket = () => {
+            if (tournamentBracket) {
+                tournamentBracket.show();
+            }
+        };
+
+        window.showTournamentResults = () => {
+            if (tournamentResults) {
+                tournamentResults.show();
+            }
+        };
+
+        window.loadSampleTournaments = () => {
+            console.log('Sample tournaments loaded (demo mode)');
+            if (tournamentLobby) {
+                tournamentLobby.loadAvailableTournaments();
+            }
+        };
+
+        window.loadSampleBracket = () => {
+            console.log('Sample bracket loaded (demo mode)');
+            if (tournamentBracket) {
+                tournamentBracket.createSampleTournament();
+            }
+        };
+
+        window.loadSampleResults = () => {
+            console.log('Sample results loaded (demo mode)');
+            if (tournamentResults) {
+                tournamentResults.createSampleResults();
+            }
+        };
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.repeat) return;
+            
+            switch (e.code) {
+                case 'KeyT':
+                    window.showTournamentLobby();
+                    break;
+                case 'KeyG':
+                    window.showTournamentBracket();
+                    break;
+                case 'KeyU':
+                    window.showTournamentResults();
+                    break;
+            }
+        });
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', initializeComponents);
+    </script>
+</body>
+</html>

@@ -1,0 +1,2242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retro Racing Betting Game - Multi-Map Edition</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.60.0/phaser.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Courier New', monospace;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+        #game-container {
+            border: 4px solid #fff;
+            box-shadow: 0 0 20px rgba(255,255,255,0.5);
+            position: relative;
+        }
+        .ui-panel {
+            position: absolute;
+            background: rgba(0,0,0,0.9);
+            color: #0f0;
+            padding: 10px;
+            border: 2px solid #0f0;
+            font-size: 14px;
+        }
+        #player-setup {
+            top: 10px;
+            right: 10px;
+            width: 300px;
+            z-index: 1000;
+        }
+        #leaderboard {
+            top: 10px;
+            left: 10px;
+            width: 250px;
+        }
+        #betting-panel {
+            bottom: 10px;
+            right: 10px;
+            width: 250px;
+        }
+        #debug-panel {
+            bottom: 10px;
+            left: 10px;
+            width: 300px;
+            background: rgba(0,0,0,0.95);
+            border: 2px solid #ff0;
+        }
+        #map-selection {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.95);
+            border: 3px solid #0f0;
+            padding: 20px;
+            z-index: 2000;
+            display: none;
+            width: 600px;
+        }
+        .map-option {
+            display: inline-block;
+            width: 180px;
+            height: 120px;
+            margin: 10px;
+            border: 2px solid #0f0;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            background-size: cover;
+            background-position: center;
+        }
+        .map-option:hover {
+            border-color: #ff0;
+            box-shadow: 0 0 10px #ff0;
+        }
+        .map-option.selected {
+            border-color: #ff0;
+            border-width: 4px;
+        }
+        .map-info {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0,0,0,0.8);
+            color: #0f0;
+            padding: 5px;
+            text-align: center;
+        }
+        .pixel-text {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        button {
+            font-family: 'Courier New', monospace;
+            text-transform: uppercase;
+            cursor: pointer;
+            background: #0f0;
+            color: #000;
+            border: 2px solid #000;
+            padding: 5px 10px;
+            margin: 5px 0;
+            width: 100%;
+        }
+        button:hover {
+            background: #0a0;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        .file-upload-btn {
+            display: inline-block;
+            cursor: pointer;
+            background: #00f;
+            color: #fff;
+            padding: 5px 10px;
+            margin: 5px 0;
+            border: 2px solid #fff;
+            width: calc(100% - 24px);
+            text-align: center;
+        }
+        .file-upload-btn:hover {
+            background: #00a;
+        }
+        #player-preview {
+            width: 128px;
+            height: 128px;
+            border: 2px solid #0f0;
+            margin: 10px auto;
+            display: block;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+            background: #000;
+        }
+        .player-name-input {
+            width: calc(100% - 10px);
+            padding: 5px;
+            margin: 5px 0;
+            background: #000;
+            color: #0f0;
+            border: 2px solid #0f0;
+            font-family: 'Courier New', monospace;
+            text-transform: uppercase;
+        }
+        #current-player-display {
+            text-align: center;
+            font-size: 18px;
+            color: #ff0;
+            margin: 10px 0;
+        }
+        .debug-info {
+            font-size: 11px;
+            color: #ff0;
+            margin: 2px 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container"></div>
+    
+    <div id="map-selection" class="ui-panel">
+        <h2 class="pixel-text" style="text-align: center; color: #0f0;">SELECT TRACK</h2>
+        <div id="map-grid" style="text-align: center;">
+            <!-- Map options will be generated here -->
+        </div>
+        <div style="text-align: center; margin-top: 20px;">
+            <button id="confirm-map" style="width: 200px; display: inline-block;">CONFIRM SELECTION</button>
+            <button id="random-map" style="width: 200px; display: inline-block; margin-left: 10px;">RANDOM MAP</button>
+        </div>
+        <p style="text-align: center; color: #ff0; margin-top: 10px;">Maps rotate every 3 races!</p>
+    </div>
+    
+    <div id="player-setup" class="ui-panel">
+        <h3 class="pixel-text">PLAYER SETUP</h3>
+        <div id="current-player-display" style="color: #ffff00;">YOUR PLAYER: P4 (YELLOW)</div>
+        <div style="background: #111; padding: 10px; margin: 10px 0; border: 1px solid #0f0;">
+            <input type="text" id="player-name" class="player-name-input" placeholder="Enter your name" maxlength="10">
+            <label for="player-image" class="file-upload-btn">UPLOAD YOUR IMAGE</label>
+            <input type="file" id="player-image" accept="image/*">
+            <img id="player-preview" style="display: none;">
+            <p style="font-size: 10px; color: #0f0; margin: 5px 0;">↑ Changes apply instantly to your character!</p>
+            <p style="font-size: 10px; color: #ff0; margin: 5px 0;">Watch your yellow player update in real-time!</p>
+        </div>
+        <button id="join-race">JOIN RACE (100 COINS BET)</button>
+        <p style="font-size: 12px; color: #0f0; margin-top: 10px;">30 seconds to prepare before race starts!</p>
+        <p style="font-size: 10px; color: #888; margin-top: 5px;">Press 'U' key if your player gets stuck</p>
+        <p style="font-size: 10px; color: #888; margin-top: 5px;">Press 'D' to toggle debug mode</p>
+        <p style="font-size: 10px; color: #888; margin-top: 5px;">Press 'M' to change map (between races)</p>
+        <div id="current-map-display" style="margin-top: 10px; padding: 5px; background: #222; border: 1px solid #0f0;">
+            <p style="font-size: 12px; color: #0f0; margin: 0;">Current Track: <span id="map-name">Classic Maze</span></p>
+            <p style="font-size: 10px; color: #888; margin: 0;">Races until rotation: <span id="races-left">3</span></p>
+        </div>
+    </div>
+    
+    <div id="leaderboard" class="ui-panel">
+        <h3 class="pixel-text">LEADERBOARD</h3>
+        <div id="leaderboard-list"></div>
+    </div>
+    
+    <div id="betting-panel" class="ui-panel">
+        <h3 class="pixel-text">BETTING & PREPARATION</h3>
+        <div id="betting-status"></div>
+        <div id="betting-options"></div>
+    </div>
+
+    <div id="debug-panel" class="ui-panel" style="display: none;">
+        <h3 class="pixel-text" style="color: #ff0;">DEBUG INFO</h3>
+        <div id="debug-info"></div>
+    </div>
+
+    <script>
+        // Map configurations
+        const MAPS = {
+            classic: {
+                name: "Classic Maze",
+                description: "The original challenging maze",
+                difficulty: "Medium",
+                backgroundColor: 0x1a3a1a,
+                trackColor: 0xffffff,
+                generator: createClassicMazeTrack
+            },
+            speedway: {
+                name: "Speed Circuit",
+                description: "Wide tracks for high-speed racing",
+                difficulty: "Easy",
+                backgroundColor: 0x222222,
+                trackColor: 0xffcc00,
+                generator: createSpeedwayTrack
+            },
+            serpentine: {
+                name: "Serpentine Path",
+                description: "Winding snake-like track",
+                difficulty: "Hard",
+                backgroundColor: 0x0a0a2a,
+                trackColor: 0x00ffff,
+                generator: createSerpentineTrack
+            },
+            grid: {
+                name: "Grid Lock",
+                description: "City block style grid",
+                difficulty: "Medium",
+                backgroundColor: 0x2a2a2a,
+                trackColor: 0xff00ff,
+                generator: createGridTrack
+            },
+            spiral: {
+                name: "Spiral Madness",
+                description: "Hypnotic spiral track",
+                difficulty: "Very Hard",
+                backgroundColor: 0x2a0a0a,
+                trackColor: 0xffff00,
+                generator: createSpiralTrack
+            },
+            islands: {
+                name: "Island Hopper",
+                description: "Connected island tracks",
+                difficulty: "Medium",
+                backgroundColor: 0x0a2a2a,
+                trackColor: 0x00ff00,
+                generator: createIslandsTrack
+            }
+        };
+
+        // Mersenne Twister for better randomness
+        class MersenneTwister {
+            constructor(seed) {
+                this.MT = new Array(624);
+                this.index = 0;
+                this.MT[0] = seed;
+                for (let i = 1; i < 624; i++) {
+                    this.MT[i] = (1812433253 * (this.MT[i-1] ^ (this.MT[i-1] >>> 30)) + i) >>> 0;
+                }
+            }
+
+            random() {
+                if (this.index === 0) this.generateNumbers();
+                
+                let y = this.MT[this.index];
+                y = y ^ (y >>> 11);
+                y = y ^ ((y << 7) & 0x9d2c5680);
+                y = y ^ ((y << 15) & 0xefc60000);
+                y = y ^ (y >>> 18);
+                
+                this.index = (this.index + 1) % 624;
+                return (y >>> 0) / 0x100000000;
+            }
+
+            generateNumbers() {
+                for (let i = 0; i < 624; i++) {
+                    let y = (this.MT[i] & 0x80000000) + (this.MT[(i + 1) % 624] & 0x7fffffff);
+                    this.MT[i] = this.MT[(i + 397) % 624] ^ (y >>> 1);
+                    if (y % 2 !== 0) this.MT[i] = this.MT[i] ^ 0x9908b0df;
+                }
+            }
+        }
+
+        const rng = new MersenneTwister(Date.now());
+
+        // Game configuration
+        const config = {
+            type: Phaser.AUTO,
+            width: 1920,
+            height: 1080,
+            parent: 'game-container',
+            pixelArt: true,
+            scale: {
+                mode: Phaser.Scale.FIT,
+                autoCenter: Phaser.Scale.CENTER_BOTH
+            },
+            physics: {
+                default: 'arcade',
+                arcade: {
+                    gravity: { y: 0 },
+                    debug: false
+                }
+            },
+            scene: {
+                preload: preload,
+                create: create,
+                update: update
+            }
+        };
+
+        // Game variables
+        let players = [];
+        let boosters = [];
+        let skills = [];
+        let mToken;
+        let gameTimer;
+        let gameTime = 300; // 5 minutes race time
+        let raceActive = false;
+        let bettingPhase = true;
+        let currentScene = null;
+        let trackData = null;
+        let trackBitmap = null;
+        let validTrackPositions = [];
+        let debugMode = false;
+        let debugGraphics = null;
+        let stuckPositions = {};
+        
+        // Map variables
+        let currentMap = 'classic';
+        let selectedMap = 'classic';
+        let racesUntilMapChange = 3;
+        let totalRaces = 0;
+        let mapRotationEnabled = true;
+        
+        // Player customization
+        let currentPlayerIndex = 3; // Yellow player (P4)
+        let playerCustomImages = {};
+        let playerNames = {};
+        let playerBets = {};
+        let leaderboardData = {};
+        
+        // Timing
+        let lastBoosterSpawn = 0;
+        let lastSkillDrop = 0;
+
+        // Booster types
+        const BOOSTER_TYPES = [
+            { name: 'antenna', color: 0x00ff00, speedMultiplier: 1.5 },
+            { name: 'twitter', color: 0x1da1f2, speedMultiplier: 1.4 },
+            { name: 'memex', color: 0xff00ff, speedMultiplier: 1.6 },
+            { name: 'poo', color: 0x8b4513, speedMultiplier: 0.8 },
+            { name: 'toilet_paper', color: 0xffffff, speedMultiplier: 1.3 },
+            { name: 'toilet', color: 0x4169e1, speedMultiplier: 1.2 },
+            { name: 'banana', color: 0xffff00, speedMultiplier: 1.7 },
+            { name: 'king_kong', color: 0x800080, speedMultiplier: 2.0 }
+        ];
+
+        // Skill types
+        const SKILL_TYPES = [
+            { name: 'thunder', color: 0xffff00, icon: '⚡' },
+            { name: 'fire', color: 0xff4500, icon: '🔥' },
+            { name: 'bubble', color: 0x00bfff, icon: '🛡️' },
+            { name: 'magnet', color: 0xff1493, icon: '🧲' },
+            { name: 'teleport', color: 0x9400d3, icon: '🌀' }
+        ];
+
+        const game = new Phaser.Game(config);
+
+        // Initialize map selection UI
+        function initializeMapSelection() {
+            const mapGrid = document.getElementById('map-grid');
+            mapGrid.innerHTML = '';
+            
+            Object.entries(MAPS).forEach(([key, map]) => {
+                const mapOption = document.createElement('div');
+                mapOption.className = 'map-option';
+                mapOption.dataset.mapKey = key;
+                
+                // Create a mini preview using canvas
+                const canvas = document.createElement('canvas');
+                canvas.width = 180;
+                canvas.height = 120;
+                const ctx = canvas.getContext('2d');
+                
+                // Draw mini version of the track
+                ctx.fillStyle = `#${map.backgroundColor.toString(16).padStart(6, '0')}`;
+                ctx.fillRect(0, 0, 180, 120);
+                ctx.fillStyle = `#${map.trackColor.toString(16).padStart(6, '0')}`;
+                
+                // Simple preview pattern based on map type
+                switch(key) {
+                    case 'classic':
+                        ctx.fillRect(10, 20, 160, 10);
+                        ctx.fillRect(10, 50, 160, 10);
+                        ctx.fillRect(10, 80, 160, 10);
+                        break;
+                    case 'speedway':
+                        ctx.fillRect(20, 10, 140, 20);
+                        ctx.fillRect(20, 90, 140, 20);
+                        ctx.fillRect(20, 10, 20, 100);
+                        ctx.fillRect(140, 10, 20, 100);
+                        break;
+                    case 'serpentine':
+                        ctx.beginPath();
+                        ctx.moveTo(20, 60);
+                        for(let x = 20; x < 160; x += 10) {
+                            ctx.lineTo(x, 60 + Math.sin(x * 0.1) * 30);
+                        }
+                        ctx.lineWidth = 10;
+                        ctx.stroke();
+                        break;
+                    case 'grid':
+                        for(let x = 20; x < 160; x += 30) {
+                            ctx.fillRect(x, 10, 10, 100);
+                        }
+                        for(let y = 20; y < 100; y += 30) {
+                            ctx.fillRect(10, y, 160, 10);
+                        }
+                        break;
+                    case 'spiral':
+                        ctx.beginPath();
+                        for(let a = 0; a < Math.PI * 6; a += 0.1) {
+                            const r = a * 8;
+                            const x = 90 + Math.cos(a) * r;
+                            const y = 60 + Math.sin(a) * r;
+                            if(a === 0) ctx.moveTo(x, y);
+                            else ctx.lineTo(x, y);
+                        }
+                        ctx.lineWidth = 8;
+                        ctx.stroke();
+                        break;
+                    case 'islands':
+                        ctx.fillRect(20, 20, 40, 40);
+                        ctx.fillRect(120, 20, 40, 40);
+                        ctx.fillRect(70, 50, 40, 40);
+                        ctx.fillRect(40, 20, 10, 70);
+                        ctx.fillRect(130, 20, 10, 70);
+                        break;
+                }
+                
+                mapOption.style.backgroundImage = `url(${canvas.toDataURL()})`;
+                
+                if (key === selectedMap) {
+                    mapOption.classList.add('selected');
+                }
+                
+                const mapInfo = document.createElement('div');
+                mapInfo.className = 'map-info';
+                mapInfo.innerHTML = `
+                    <div style="font-size: 12px; font-weight: bold;">${map.name}</div>
+                    <div style="font-size: 10px;">${map.difficulty}</div>
+                `;
+                
+                mapOption.appendChild(mapInfo);
+                
+                mapOption.addEventListener('click', () => {
+                    document.querySelectorAll('.map-option').forEach(opt => opt.classList.remove('selected'));
+                    mapOption.classList.add('selected');
+                    selectedMap = key;
+                });
+                
+                mapGrid.appendChild(mapOption);
+            });
+        }
+
+        // Map generation functions
+        function createClassicMazeTrack(scene) {
+            const graphics = scene.add.graphics();
+            
+            // Dark green background
+            graphics.fillStyle(MAPS.classic.backgroundColor);
+            graphics.fillRect(0, 0, 1920, 1080);
+            
+            // Draw white maze paths
+            graphics.fillStyle(MAPS.classic.trackColor);
+            
+            // Main corridors (made wider)
+            graphics.fillRect(70, 170, 1780, 120);
+            graphics.fillRect(70, 480, 1780, 120);
+            graphics.fillRect(70, 780, 1780, 120);
+            
+            // Vertical connections (made wider)
+            graphics.fillRect(70, 170, 120, 730);
+            graphics.fillRect(270, 170, 120, 430);
+            graphics.fillRect(470, 270, 120, 330);
+            graphics.fillRect(670, 170, 120, 430);
+            graphics.fillRect(870, 270, 120, 530);
+            graphics.fillRect(1070, 170, 120, 630);
+            graphics.fillRect(1270, 270, 120, 330);
+            graphics.fillRect(1470, 170, 120, 730);
+            graphics.fillRect(1730, 170, 120, 730);
+            
+            // Bridges (made wider)
+            graphics.fillRect(270, 330, 240, 90);
+            graphics.fillRect(670, 330, 240, 90);
+            graphics.fillRect(470, 630, 440, 90);
+            graphics.fillRect(1070, 380, 240, 90);
+            graphics.fillRect(1270, 630, 240, 90);
+            
+            // Dead ends (made wider)
+            graphics.fillRect(170, 330, 140, 90);
+            graphics.fillRect(1570, 330, 180, 90);
+            graphics.fillRect(370, 700, 340, 90);
+            graphics.fillRect(1170, 700, 340, 90);
+            
+            // Branches (made wider)
+            graphics.fillRect(570, 380, 120, 130);
+            graphics.fillRect(970, 280, 120, 130);
+            graphics.fillRect(1370, 560, 120, 170);
+            
+            graphics.generateTexture('track', 1920, 1080);
+            graphics.destroy();
+        }
+
+        function createSpeedwayTrack(scene) {
+            const graphics = scene.add.graphics();
+            
+            graphics.fillStyle(MAPS.speedway.backgroundColor);
+            graphics.fillRect(0, 0, 1920, 1080);
+            
+            graphics.fillStyle(MAPS.speedway.trackColor);
+            
+            // Outer track
+            graphics.fillRect(100, 100, 1720, 150);  // Top
+            graphics.fillRect(100, 830, 1720, 150);  // Bottom
+            graphics.fillRect(100, 100, 150, 880);   // Left
+            graphics.fillRect(1670, 100, 150, 880);  // Right
+            
+            // Inner obstacles
+            graphics.fillRect(400, 400, 1120, 100);  // Middle horizontal
+            graphics.fillRect(400, 580, 1120, 100);  // Lower middle
+            graphics.fillRect(400, 400, 100, 280);   // Left connector
+            graphics.fillRect(1420, 400, 100, 280);  // Right connector
+            
+            // Chicanes
+            graphics.fillRect(600, 250, 100, 150);
+            graphics.fillRect(800, 680, 100, 150);
+            graphics.fillRect(1020, 250, 100, 150);
+            graphics.fillRect(1220, 680, 100, 150);
+            
+            graphics.generateTexture('track', 1920, 1080);
+            graphics.destroy();
+        }
+
+        function createSerpentineTrack(scene) {
+            const graphics = scene.add.graphics();
+            
+            graphics.fillStyle(MAPS.serpentine.backgroundColor);
+            graphics.fillRect(0, 0, 1920, 1080);
+            
+            graphics.fillStyle(MAPS.serpentine.trackColor);
+            
+            // Create a winding path
+            const pathWidth = 140;
+            const amplitude = 300;
+            const frequency = 0.003;
+            
+            for (let x = 50; x < 1870; x += 5) {
+                const y = 540 + Math.sin(x * frequency) * amplitude;
+                graphics.fillRect(x, y - pathWidth/2, 10, pathWidth);
+            }
+            
+            // Add connecting paths at the ends
+            graphics.fillRect(50, 240, 100, 600);
+            graphics.fillRect(1770, 240, 100, 600);
+            
+            // Add some crossing paths
+            graphics.fillRect(400, 340, 100, 400);
+            graphics.fillRect(800, 340, 100, 400);
+            graphics.fillRect(1200, 340, 100, 400);
+            graphics.fillRect(1600, 340, 100, 400);
+            
+            graphics.generateTexture('track', 1920, 1080);
+            graphics.destroy();
+        }
+
+        function createGridTrack(scene) {
+            const graphics = scene.add.graphics();
+            
+            graphics.fillStyle(MAPS.grid.backgroundColor);
+            graphics.fillRect(0, 0, 1920, 1080);
+            
+            graphics.fillStyle(MAPS.grid.trackColor);
+            
+            // Create city block style grid
+            const blockSize = 200;
+            const streetWidth = 100;
+            
+            // Horizontal streets
+            for (let y = 100; y < 1000; y += blockSize) {
+                graphics.fillRect(50, y, 1820, streetWidth);
+            }
+            
+            // Vertical streets
+            for (let x = 150; x < 1800; x += blockSize) {
+                graphics.fillRect(x, 50, streetWidth, 980);
+            }
+            
+            // Remove some intersections to create variety
+            graphics.fillStyle(MAPS.grid.backgroundColor);
+            graphics.fillRect(350, 300, 100, 100);
+            graphics.fillRect(750, 300, 100, 100);
+            graphics.fillRect(550, 500, 100, 100);
+            graphics.fillRect(950, 500, 100, 100);
+            graphics.fillRect(1150, 300, 100, 100);
+            graphics.fillRect(1350, 700, 100, 100);
+            
+            graphics.generateTexture('track', 1920, 1080);
+            graphics.destroy();
+        }
+
+        function createSpiralTrack(scene) {
+            const graphics = scene.add.graphics();
+            
+            graphics.fillStyle(MAPS.spiral.backgroundColor);
+            graphics.fillRect(0, 0, 1920, 1080);
+            
+            // Create spiral path
+            const centerX = 960;
+            const centerY = 540;
+            const pathWidth = 100;
+            
+            graphics.lineStyle(pathWidth, MAPS.spiral.trackColor);
+            graphics.beginPath();
+            
+            let prevX = centerX;
+            let prevY = centerY;
+            
+            for (let angle = 0; angle < Math.PI * 12; angle += 0.05) {
+                const radius = angle * 40;
+                const x = centerX + Math.cos(angle) * radius;
+                const y = centerY + Math.sin(angle) * radius;
+                
+                if (x > 50 && x < 1870 && y > 50 && y < 1030) {
+                    if (angle === 0) {
+                        graphics.moveTo(x, y);
+                    } else {
+                        graphics.lineTo(x, y);
+                    }
+                    prevX = x;
+                    prevY = y;
+                }
+            }
+            
+            graphics.strokePath();
+            
+            // Add entrance/exit paths
+            graphics.fillStyle(MAPS.spiral.trackColor);
+            graphics.fillRect(centerX - pathWidth/2, centerY - pathWidth/2, pathWidth, 540);
+            
+            graphics.generateTexture('track', 1920, 1080);
+            graphics.destroy();
+        }
+
+        function createIslandsTrack(scene) {
+            const graphics = scene.add.graphics();
+            
+            graphics.fillStyle(MAPS.islands.backgroundColor);
+            graphics.fillRect(0, 0, 1920, 1080);
+            
+            graphics.fillStyle(MAPS.islands.trackColor);
+            
+            // Create connected islands
+            // Islands
+            graphics.fillCircle(300, 300, 150);
+            graphics.fillCircle(800, 200, 120);
+            graphics.fillCircle(1300, 300, 140);
+            graphics.fillCircle(1600, 500, 130);
+            graphics.fillCircle(1300, 780, 150);
+            graphics.fillCircle(800, 880, 120);
+            graphics.fillCircle(300, 780, 140);
+            graphics.fillCircle(600, 540, 100);
+            graphics.fillCircle(1000, 540, 110);
+            graphics.fillCircle(1400, 540, 100);
+            
+            // Bridges connecting islands
+            graphics.fillRect(300, 280, 500, 80);   // Top left to top middle
+            graphics.fillRect(800, 180, 500, 80);   // Top middle to top right
+            graphics.fillRect(1300, 300, 300, 80);  // Top right to right
+            graphics.fillRect(1550, 500, 80, 280);  // Right to bottom right
+            graphics.fillRect(1300, 750, 300, 80);  // Bottom right to right
+            graphics.fillRect(800, 830, 500, 80);   // Bottom middle to bottom right
+            graphics.fillRect(300, 750, 500, 80);   // Bottom left to bottom middle
+            graphics.fillRect(250, 300, 80, 480);   // Left vertical
+            graphics.fillRect(600, 500, 400, 80);   // Center horizontal
+            graphics.fillRect(1000, 500, 400, 80);  // Center horizontal 2
+            
+            graphics.generateTexture('track', 1920, 1080);
+            graphics.destroy();
+        }
+
+        // Enhanced position checking with tolerance
+        function isPositionOnTrackWithTolerance(x, y, tolerance = 0) {
+            // Check multiple points around the position for better accuracy
+            const points = [
+                {x: x, y: y},
+                {x: x - tolerance, y: y},
+                {x: x + tolerance, y: y},
+                {x: x, y: y - tolerance},
+                {x: x, y: y + tolerance}
+            ];
+            
+            for (const point of points) {
+                if (isPositionOnTrack(point.x, point.y)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // Find the best direction to move when stuck
+        function findBestDirection(x, y, currentDirection) {
+            const testDistance = 20;
+            const angleStep = Math.PI / 16; // 22.5 degrees
+            let bestAngle = currentDirection;
+            let maxClearDistance = 0;
+            
+            // Test all directions
+            for (let angle = 0; angle < Math.PI * 2; angle += angleStep) {
+                let clearDistance = 0;
+                
+                // Check how far we can go in this direction
+                for (let dist = 5; dist <= 50; dist += 5) {
+                    const testX = x + Math.cos(angle) * dist;
+                    const testY = y + Math.sin(angle) * dist;
+                    
+                    if (isPositionOnTrack(testX, testY)) {
+                        clearDistance = dist;
+                    } else {
+                        break;
+                    }
+                }
+                
+                if (clearDistance > maxClearDistance) {
+                    maxClearDistance = clearDistance;
+                    bestAngle = angle;
+                }
+            }
+            
+            // If we found a good direction, use it
+            if (maxClearDistance > 10) {
+                return bestAngle;
+            }
+            
+            // Otherwise, try the opposite of current direction
+            return currentDirection + Math.PI;
+        }
+
+        // Enhanced stuck detection and resolution
+        function handleStuckPlayer(player, index) {
+            // Increment stuck counter
+            player.stuckCounter++;
+            
+            // Log stuck position for analysis
+            const posKey = `${Math.floor(player.x / 10)},${Math.floor(player.y / 10)}`;
+            stuckPositions[posKey] = (stuckPositions[posKey] || 0) + 1;
+            
+            // Different levels of stuck handling
+            if (player.stuckCounter > 30 && player.stuckCounter <= 60) {
+                // Level 1: Try to find best direction
+                player.moveDirection = findBestDirection(player.x, player.y, player.moveDirection);
+                player.currentSpeed = player.baseSpeed * 1.5; // Speed boost to escape
+                
+                if (debugMode && index === currentPlayerIndex) {
+                    console.log(`Level 1 stuck handling: new direction ${player.moveDirection.toFixed(2)}`);
+                }
+            } else if (player.stuckCounter > 60 && player.stuckCounter <= 120) {
+                // Level 2: More aggressive escape
+                // Try to move to center of nearest clear area
+                let moved = false;
+                for (let radius = 20; radius <= 60; radius += 10) {
+                    for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 8) {
+                        const newX = player.x + Math.cos(angle) * radius;
+                        const newY = player.y + Math.sin(angle) * radius;
+                        
+                        if (isPositionOnTrackWithTolerance(newX, newY, 5)) {
+                            player.x = newX;
+                            player.y = newY;
+                            player.moveDirection = angle;
+                            player.stuckCounter = 0;
+                            moved = true;
+                            
+                            if (debugMode && index === currentPlayerIndex) {
+                                console.log(`Level 2 stuck handling: teleported to ${Math.floor(newX)}, ${Math.floor(newY)}`);
+                            }
+                            break;
+                        }
+                    }
+                    if (moved) break;
+                }
+            } else if (player.stuckCounter > 120) {
+                // Level 3: Emergency teleport to random valid position
+                const safePosition = validTrackPositions[Math.floor(rng.random() * validTrackPositions.length)];
+                player.x = safePosition.x;
+                player.y = safePosition.y;
+                player.moveDirection = rng.random() * Math.PI * 2;
+                player.stuckCounter = 0;
+                
+                // Add visual effect for teleport
+                if (currentScene) {
+                    const teleportEffect = currentScene.add.circle(safePosition.x, safePosition.y, 30, 0xff00ff, 0.5);
+                    currentScene.tweens.add({
+                        targets: teleportEffect,
+                        scale: 2,
+                        alpha: 0,
+                        duration: 500,
+                        onComplete: () => teleportEffect.destroy()
+                    });
+                }
+                
+                if (debugMode) {
+                    console.log(`Level 3 emergency teleport for player ${index + 1} to ${Math.floor(safePosition.x)}, ${Math.floor(safePosition.y)}`);
+                }
+            }
+        }
+
+        // Player customization handlers
+        document.getElementById('player-image').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    // Create a canvas to resize the image
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = 128;
+                    canvas.height = 128;
+                    
+                    const img = new Image();
+                    img.onload = function() {
+                        // Clear canvas
+                        ctx.clearRect(0, 0, 128, 128);
+                        
+                        // Enable pixelated rendering
+                        ctx.imageSmoothingEnabled = false;
+                        
+                        // Calculate scaling to fit 128x128 while maintaining aspect ratio
+                        const scale = Math.min(128 / img.width, 128 / img.height);
+                        const width = img.width * scale;
+                        const height = img.height * scale;
+                        const x = (128 - width) / 2;
+                        const y = (128 - height) / 2;
+                        
+                        // Draw scaled image
+                        ctx.drawImage(img, x, y, width, height);
+                        
+                        // Get pixelated image data
+                        const pixelatedDataUrl = canvas.toDataURL('image/png');
+                        
+                        // Update preview
+                        const preview = document.getElementById('player-preview');
+                        preview.src = pixelatedDataUrl;
+                        preview.style.display = 'block';
+                        preview.style.imageRendering = 'pixelated';
+                        preview.style.width = '128px';
+                        preview.style.height = '128px';
+                        
+                        // Store the canvas for later use
+                        playerCustomImages[currentPlayerIndex] = canvas;
+                        
+                        // If game is already running, update the texture immediately
+                        if (currentScene && currentScene.textures) {
+                            // Add the canvas as a texture
+                            currentScene.textures.addCanvas(`custom_player${currentPlayerIndex}`, canvas);
+                            
+                            // If player exists, update their texture immediately
+                            if (players && players.length > currentPlayerIndex && players[currentPlayerIndex]) {
+                                // Update texture
+                                players[currentPlayerIndex].setTexture(`custom_player${currentPlayerIndex}`);
+                                players[currentPlayerIndex].setScale(0.25);
+                                
+                                // Ensure player is active and physics is enabled
+                                players[currentPlayerIndex].active = true;
+                                if (players[currentPlayerIndex].body) {
+                                    players[currentPlayerIndex].body.enable = true;
+                                }
+                                
+                                // Show feedback
+                                const feedback = document.createElement('p');
+                                feedback.style.color = '#0f0';
+                                feedback.textContent = 'Image applied to your character!';
+                                feedback.style.fontSize = '11px';
+                                document.getElementById('player-setup').appendChild(feedback);
+                                setTimeout(() => {
+                                    if (feedback.parentNode) {
+                                        feedback.remove();
+                                    }
+                                }, 3000);
+                            }
+                        }
+                    };
+                    img.onerror = function() {
+                        alert('Failed to load image. Please try a different image.');
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        document.getElementById('player-name').addEventListener('input', function(e) {
+            const name = e.target.value || `P${currentPlayerIndex + 1}`;
+            playerNames[currentPlayerIndex] = name;
+            
+            // Update player name immediately if game is running
+            if (currentScene && players && players.length > currentPlayerIndex && players[currentPlayerIndex]) {
+                if (players[currentPlayerIndex].nameText) {
+                    players[currentPlayerIndex].nameText.setText(name);
+                }
+            }
+        });
+
+        document.getElementById('join-race').addEventListener('click', function() {
+            const name = document.getElementById('player-name').value || `P${currentPlayerIndex + 1}`;
+            playerNames[currentPlayerIndex] = name;
+            
+            // Initialize leaderboard data for this player
+            if (!leaderboardData[currentPlayerIndex]) {
+                leaderboardData[currentPlayerIndex] = {
+                    name: name,
+                    wins: 0,
+                    totalScore: 0,
+                    races: 0,
+                    earnings: 0
+                };
+            }
+            
+            // Automatically place initial bet
+            const initialBet = 100;
+            playerBets[currentPlayerIndex] = initialBet;
+            
+            // Update player if game is running
+            if (currentScene && players && players[currentPlayerIndex]) {
+                // Update player name
+                if (players[currentPlayerIndex].nameText) {
+                    players[currentPlayerIndex].nameText.setText(name);
+                }
+                
+                // Check if custom image was uploaded and apply it
+                if (playerCustomImages[currentPlayerIndex]) {
+                    const customKey = `custom_player${currentPlayerIndex}`;
+                    if (currentScene.textures.exists(customKey)) {
+                        players[currentPlayerIndex].setTexture(customKey);
+                        players[currentPlayerIndex].setScale(0.25);
+                    }
+                }
+            }
+            
+            alert(`${name} joined as Player ${currentPlayerIndex + 1} (Yellow) with a mandatory ${initialBet} coin bet!`);
+            updateLeaderboardDisplay();
+            
+            // Update betting display if in betting phase
+            if (bettingPhase) {
+                const betAmountEl = document.getElementById('bet-amount');
+                if (betAmountEl) {
+                    betAmountEl.textContent = `Total bet: ${playerBets[currentPlayerIndex]} coins`;
+                }
+            }
+        });
+
+        // Map selection handlers
+        document.getElementById('confirm-map').addEventListener('click', function() {
+            if (!raceActive) {
+                currentMap = selectedMap;
+                document.getElementById('map-selection').style.display = 'none';
+                document.getElementById('map-name').textContent = MAPS[currentMap].name;
+                
+                // Regenerate track with new map
+                if (currentScene) {
+                    regenerateTrack();
+                }
+            }
+        });
+
+        document.getElementById('random-map').addEventListener('click', function() {
+            const mapKeys = Object.keys(MAPS);
+            selectedMap = mapKeys[Math.floor(rng.random() * mapKeys.length)];
+            
+            document.querySelectorAll('.map-option').forEach(opt => opt.classList.remove('selected'));
+            document.querySelector(`[data-map-key="${selectedMap}"]`).classList.add('selected');
+        });
+
+        function regenerateTrack() {
+            // Clear existing track
+            if (currentScene.textures.exists('track')) {
+                currentScene.textures.remove('track');
+            }
+            
+            // Generate new track
+            MAPS[currentMap].generator(currentScene);
+            
+            // Update track collision data
+            createTrackCollisionData(currentScene);
+            findValidTrackPositions();
+            
+            // Clear stuck positions for new map
+            stuckPositions = {};
+            
+            // Update background
+            currentScene.cameras.main.setBackgroundColor(MAPS[currentMap].backgroundColor);
+            
+            // Redraw track
+            const existingTrack = currentScene.children.list.find(child => child.texture && child.texture.key === 'track');
+            if (existingTrack) {
+                existingTrack.destroy();
+            }
+            currentScene.add.image(960, 540, 'track');
+        }
+
+        function preload() {
+            // Create pixel art sprites and track
+            createPixelSprites(this);
+            MAPS[currentMap].generator(this);
+            
+            // Load custom player images if they exist
+            for (let i = 0; i < 6; i++) {
+                if (playerCustomImages[i] && playerCustomImages[i] instanceof HTMLCanvasElement) {
+                    // Add canvas texture directly
+                    this.textures.addCanvas(`custom_player${i}`, playerCustomImages[i]);
+                }
+            }
+        }
+
+        function create() {
+            currentScene = this;
+            
+            // Set background color based on current map
+            this.cameras.main.setBackgroundColor(MAPS[currentMap].backgroundColor);
+            
+            // Display track
+            const track = this.add.image(960, 540, 'track');
+            
+            // Create track collision data and valid positions
+            createTrackCollisionData(this);
+            findValidTrackPositions();
+            
+            // Create debug graphics
+            debugGraphics = this.add.graphics();
+            debugGraphics.setDepth(1000);
+            
+            // Wait a bit for all assets to load
+            this.time.delayedCall(200, () => {
+                // Get ONE random start position for ALL players
+                let startPosition;
+                let attempts = 0;
+                
+                // Ensure we find a valid position with enough space for all players
+                do {
+                    startPosition = validTrackPositions[Math.floor(rng.random() * validTrackPositions.length)];
+                    attempts++;
+                    
+                    // Check if there's enough space around this position for all players
+                    let validSpace = true;
+                    for (let testX = -30; testX <= 30; testX += 30) {
+                        for (let testY = -15; testY <= 15; testY += 30) {
+                            if (!isPositionOnTrack(startPosition.x + testX, startPosition.y + testY)) {
+                                validSpace = false;
+                                break;
+                            }
+                        }
+                        if (!validSpace) break;
+                    }
+                    
+                    if (validSpace) break;
+                } while (attempts < 100);
+                
+                // Create players at the same random position (slightly spread out)
+                for (let i = 0; i < 6; i++) {
+                    // Arrange in 2 rows of 3
+                    const col = i % 3;
+                    const row = Math.floor(i / 3);
+                    const offsetX = (col - 1) * 30; // -30, 0, 30 (increased spacing)
+                    const offsetY = row * 30 - 15; // -15, 15 (increased spacing)
+                    
+                    const playerPos = {
+                        x: startPosition.x + offsetX,
+                        y: startPosition.y + offsetY
+                    };
+                    const player = createPlayer(this, i, playerPos);
+                    players.push(player);
+                }
+                
+                // Show start position indicator
+                const startIndicator = this.add.circle(startPosition.x, startPosition.y, 40, 0x00ff00, 0.5);
+                const startText = this.add.text(startPosition.x, startPosition.y, 'START', {
+                    fontSize: '20px',
+                    fontFamily: 'Courier New',
+                    color: '#00ff00',
+                    stroke: '#000000',
+                    strokeThickness: 3
+                }).setOrigin(0.5);
+                
+                this.tweens.add({
+                    targets: [startIndicator, startText],
+                    alpha: 0,
+                    scale: 3,
+                    duration: 3000,
+                    onComplete: () => {
+                        startIndicator.destroy();
+                        startText.destroy();
+                    }
+                });
+                
+                // Place M token far from the start position
+                const tokenPosition = getFarthestPositionFromStart(startPosition);
+                mToken = this.physics.add.sprite(tokenPosition.x, tokenPosition.y, 'mtoken');
+                mToken.setScale(1);
+                
+                // Add goal indicator
+                const goalArrow = this.add.text(tokenPosition.x, tokenPosition.y - 40, '⬇', {
+                    fontSize: '32px',
+                    color: '#ffff00'
+                }).setOrigin(0.5);
+                
+                this.tweens.add({
+                    targets: goalArrow,
+                    y: tokenPosition.y - 50,
+                    duration: 1000,
+                    yoyo: true,
+                    repeat: -1
+                });
+                
+                // Start betting phase
+                startBettingPhase();
+            });
+            
+            // UI Elements
+            createUI(this);
+            
+            // Timer
+            this.time.addEvent({
+                delay: 1000,
+                callback: updateTimer,
+                callbackScope: this,
+                loop: true
+            });
+            
+            // Add debug key to unstick player
+            this.input.keyboard.on('keydown-U', () => {
+                if (players[currentPlayerIndex]) {
+                    const player = players[currentPlayerIndex];
+                    console.log(`Manually unsticking player at ${Math.floor(player.x)}, ${Math.floor(player.y)}`);
+                    
+                    // Force level 3 stuck handling
+                    player.stuckCounter = 121;
+                    handleStuckPlayer(player, currentPlayerIndex);
+                }
+            });
+            
+            // Add debug mode toggle
+            this.input.keyboard.on('keydown-D', () => {
+                debugMode = !debugMode;
+                document.getElementById('debug-panel').style.display = debugMode ? 'block' : 'none';
+                console.log(`Debug mode: ${debugMode ? 'ON' : 'OFF'}`);
+            });
+            
+            // Add map selection key
+            this.input.keyboard.on('keydown-M', () => {
+                if (!raceActive) {
+                    document.getElementById('map-selection').style.display = 'block';
+                }
+            });
+        }
+
+        function update(time, delta) {
+            if (!raceActive || players.length === 0) return;
+            
+            // Clear debug graphics
+            if (debugGraphics) {
+                debugGraphics.clear();
+            }
+            
+            // Update debug info
+            if (debugMode) {
+                updateDebugInfo();
+                
+                // Draw stuck positions
+                for (const [posKey, count] of Object.entries(stuckPositions)) {
+                    if (count > 5) {
+                        const [x, y] = posKey.split(',').map(n => parseInt(n) * 10);
+                        debugGraphics.fillStyle(0xff0000, 0.3);
+                        debugGraphics.fillCircle(x, y, 20);
+                    }
+                }
+            }
+            
+            // Update all players with random "blind horse" movement
+            players.forEach((player, index) => {
+                // Skip if player doesn't exist or is paralyzed
+                if (!player || player.paralyzed) return;
+                
+                // Initialize movement direction if not set
+                if (player.moveDirection === undefined || player.moveDirection === null) {
+                    player.moveDirection = rng.random() * Math.PI * 2;
+                }
+                
+                // Random movement like blind horses (reduced frequency)
+                if (rng.random() < 0.02) { // Further reduced from 3% to 2%
+                    player.moveDirection += (rng.random() - 0.5) * Math.PI * 0.3; // Smaller direction changes
+                }
+                
+                // Calculate movement with look-ahead
+                const moveSpeed = player.currentSpeed * delta / 16;
+                const lookAheadDistance = moveSpeed + 10; // Look ahead a bit more than movement
+                
+                // Check multiple points along the movement path
+                let canMove = true;
+                let hitWallAt = 1.0;
+                
+                for (let checkDist = 5; checkDist <= lookAheadDistance; checkDist += 5) {
+                    const checkX = player.x + Math.cos(player.moveDirection) * checkDist;
+                    const checkY = player.y + Math.sin(player.moveDirection) * checkDist;
+                    
+                    if (!isPositionOnTrackWithTolerance(checkX, checkY, 3)) {
+                        canMove = false;
+                        hitWallAt = (checkDist - 5) / lookAheadDistance;
+                        break;
+                    }
+                }
+                
+                if (canMove) {
+                    // Move player
+                    player.x += Math.cos(player.moveDirection) * moveSpeed;
+                    player.y += Math.sin(player.moveDirection) * moveSpeed;
+                    player.currentSpeed = Math.min(player.currentSpeed + 0.05, player.baseSpeed * player.speedMultiplier * 1.5);
+                    
+                    // Reset stuck counter on successful movement
+                    if (player.stuckCounter > 0) {
+                        player.stuckCounter = Math.max(0, player.stuckCounter - 2);
+                    }
+                } else {
+                    // Move partial distance if possible
+                    if (hitWallAt > 0.1) {
+                        const partialMove = moveSpeed * hitWallAt * 0.8;
+                        player.x += Math.cos(player.moveDirection) * partialMove;
+                        player.y += Math.sin(player.moveDirection) * partialMove;
+                    }
+                    
+                    // Find best new direction
+                    const newDirection = findBestDirection(player.x, player.y, player.moveDirection);
+                    
+                    // Smooth direction change
+                    const directionDiff = newDirection - player.moveDirection;
+                    player.moveDirection += directionDiff * 0.3; // Gradual turn
+                    
+                    // Reduce speed on wall hit
+                    player.currentSpeed = player.baseSpeed * player.speedMultiplier * 0.6;
+                    
+                    // Increment stuck counter
+                    player.stuckCounter = (player.stuckCounter || 0) + 1;
+                }
+                
+                // Biorhythm performance (slower variation)
+                const biorhythm = Math.sin(time * 0.0003 * player.biorhythmSpeed + player.biorhythmOffset); // Further reduced
+                player.currentSpeed = player.baseSpeed * player.speedMultiplier * (1 + biorhythm * 0.15); // Reduced variation
+                
+                // Update physics body position if it exists
+                if (player.body) {
+                    player.body.updateFromGameObject();
+                }
+                
+                // Update name text position
+                if (player.nameText) {
+                    player.nameText.x = player.x;
+                    player.nameText.y = player.y + 20;
+                }
+                
+                // Enhanced stuck detection
+                if (player.lastPositions) {
+                    // Keep track of last 10 positions
+                    player.lastPositions.push({ x: player.x, y: player.y, time: time });
+                    if (player.lastPositions.length > 10) {
+                        player.lastPositions.shift();
+                    }
+                    
+                    // Check if player hasn't moved much in last 10 frames
+                    if (player.lastPositions.length >= 10) {
+                        const oldPos = player.lastPositions[0];
+                        const distanceMoved = Phaser.Math.Distance.Between(
+                            player.x, player.y,
+                            oldPos.x, oldPos.y
+                        );
+                        
+                        if (distanceMoved < 5) { // Less than 5 pixels in 10 frames
+                            handleStuckPlayer(player, index);
+                        }
+                    }
+                } else {
+                    player.lastPositions = [{ x: player.x, y: player.y, time: time }];
+                }
+                
+                // Draw debug info for current player
+                if (debugMode && index === currentPlayerIndex) {
+                    // Draw movement direction
+                    debugGraphics.lineStyle(2, 0x00ff00);
+                    debugGraphics.beginPath();
+                    debugGraphics.moveTo(player.x, player.y);
+                    debugGraphics.lineTo(
+                        player.x + Math.cos(player.moveDirection) * 30,
+                        player.y + Math.sin(player.moveDirection) * 30
+                    );
+                    debugGraphics.strokePath();
+                    
+                    // Draw stuck counter
+                    if (player.stuckCounter > 0) {
+                        const stuckText = currentScene.add.text(
+                            player.x, 
+                            player.y - 30, 
+                            `Stuck: ${player.stuckCounter}`,
+                            {
+                                fontSize: '12px',
+                                color: player.stuckCounter > 60 ? '#ff0000' : '#ffff00',
+                                backgroundColor: '#000000'
+                            }
+                        ).setOrigin(0.5);
+                        
+                        currentScene.time.delayedCall(100, () => stuckText.destroy());
+                    }
+                }
+            });
+            
+            // Check collisions
+            this.physics.overlap(players, mToken, winRace, null, this);
+            this.physics.overlap(players, boosters, collectBooster, null, this);
+            this.physics.overlap(players, skills, collectSkill, null, this);
+            
+            // Player collisions
+            for (let i = 0; i < players.length; i++) {
+                for (let j = i + 1; j < players.length; j++) {
+                    if (players[i] && players[j] && 
+                        Phaser.Math.Distance.Between(players[i].x, players[i].y, players[j].x, players[j].y) < 20) {
+                        playerCollision(players[i], players[j]);
+                    }
+                }
+            }
+            
+            // Spawn boosters
+            if (time - lastBoosterSpawn > 3000 + rng.random() * 5000) {
+                spawnBooster(this);
+                lastBoosterSpawn = time;
+            }
+            
+            // Drop skills
+            if (time - lastSkillDrop > 5000 + rng.random() * 10000) {
+                dropSkill(this);
+                lastSkillDrop = time;
+            }
+            
+            // Chaos events
+            if (rng.random() < 0.0005) {
+                triggerChaosEvent(this);
+            }
+        }
+
+        function updateDebugInfo() {
+            const debugDiv = document.getElementById('debug-info');
+            const player = players[currentPlayerIndex];
+            
+            if (!player) return;
+            
+            let html = `
+                <div class="debug-info">Map: ${MAPS[currentMap].name}</div>
+                <div class="debug-info">Pos: ${Math.floor(player.x)}, ${Math.floor(player.y)}</div>
+                <div class="debug-info">Dir: ${player.moveDirection ? player.moveDirection.toFixed(2) : 'N/A'}</div>
+                <div class="debug-info">Speed: ${player.currentSpeed ? player.currentSpeed.toFixed(2) : 'N/A'}</div>
+                <div class="debug-info">Stuck: ${player.stuckCounter || 0}</div>
+                <div class="debug-info">Track OK: ${isPositionOnTrack(player.x, player.y) ? 'YES' : 'NO'}</div>
+            `;
+            
+            // Show top stuck positions
+            const topStuck = Object.entries(stuckPositions)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 3);
+            
+            if (topStuck.length > 0) {
+                html += '<div class="debug-info" style="margin-top: 10px;">Problem areas:</div>';
+                topStuck.forEach(([pos, count]) => {
+                    const [x, y] = pos.split(',').map(n => parseInt(n) * 10);
+                    html += `<div class="debug-info">- ${x},${y} (${count}x)</div>`;
+                });
+            }
+            
+            debugDiv.innerHTML = html;
+        }
+
+        function createPixelSprites(scene) {
+            const graphics = scene.add.graphics();
+            
+            // Default player sprites (128x128 for consistency)
+            const playerColors = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff, 0x00ffff];
+            playerColors.forEach((color, i) => {
+                graphics.fillStyle(color);
+                // Larger sprite design
+                graphics.fillRect(32, 16, 64, 96);    // Body
+                graphics.fillRect(16, 48, 96, 48);     // Wings/sides
+                graphics.fillRect(48, 0, 32, 32);      // Head
+                graphics.generateTexture(`player${i}`, 128, 128);
+                graphics.clear();
+            });
+            
+            // M Token (kept at 32x32)
+            graphics.fillStyle(0xffd700);
+            graphics.fillRect(8, 0, 16, 32);
+            graphics.fillRect(0, 8, 32, 16);
+            graphics.generateTexture('mtoken', 32, 32);
+            graphics.clear();
+            
+            // Boosters (kept at 32x32)
+            BOOSTER_TYPES.forEach((booster) => {
+                graphics.fillStyle(booster.color);
+                graphics.fillCircle(16, 16, 12);
+                graphics.generateTexture(`booster_${booster.name}`, 32, 32);
+                graphics.clear();
+            });
+            
+            // Skills (kept at 32x32)
+            graphics.fillStyle(0xffffff);
+            graphics.fillRect(4, 4, 24, 24);
+            graphics.generateTexture('skill_base', 32, 32);
+            graphics.clear();
+            
+            graphics.destroy();
+        }
+
+        function createTrackCollisionData(scene) {
+            const canvas = scene.textures.createCanvas('trackData', 1920, 1080);
+            const context = canvas.context;
+            const trackImage = scene.textures.get('track').getSourceImage();
+            context.drawImage(trackImage, 0, 0);
+            trackData = context.getImageData(0, 0, 1920, 1080);
+        }
+
+        function findValidTrackPositions() {
+            validTrackPositions = [];
+            // Sample every 20 pixels for performance
+            for (let x = 40; x < 1880; x += 20) {
+                for (let y = 40; y < 1040; y += 20) {
+                    if (isPositionOnTrack(x, y)) {
+                        validTrackPositions.push({ x, y });
+                    }
+                }
+            }
+        }
+
+        function getFarthestPositionFromStart(startPos) {
+            let farthestPos = validTrackPositions[0];
+            let maxDistance = 0;
+            
+            // Check each valid position
+            for (const pos of validTrackPositions) {
+                const dist = Phaser.Math.Distance.Between(startPos.x, startPos.y, pos.x, pos.y);
+                
+                // If this position is farther from start, use it
+                if (dist > maxDistance) {
+                    maxDistance = dist;
+                    farthestPos = pos;
+                }
+            }
+            
+            return farthestPos;
+        }
+
+        function isPositionOnTrack(x, y) {
+            if (x < 0 || x >= 1920 || y < 0 || y >= 1080) return false;
+            
+            const pixelX = Math.floor(x);
+            const pixelY = Math.floor(y);
+            const index = (pixelY * 1920 + pixelX) * 4;
+            
+            const r = trackData.data[index];
+            const g = trackData.data[index + 1];
+            const b = trackData.data[index + 2];
+            
+            // More lenient check for track colors
+            const brightness = (r + g + b) / 3;
+            return brightness > 150; // Adjust based on track color
+        }
+
+        function createPlayer(scene, index, startPos) {
+            // First check if texture exists, otherwise use default
+            let spriteKey = `player${index}`;
+            
+            // Check for custom image
+            if (playerCustomImages[index]) {
+                const customKey = `custom_player${index}`;
+                // If canvas exists but texture doesn't, add it now
+                if (playerCustomImages[index] instanceof HTMLCanvasElement && !scene.textures.exists(customKey)) {
+                    scene.textures.addCanvas(customKey, playerCustomImages[index]);
+                }
+                if (scene.textures.exists(customKey)) {
+                    spriteKey = customKey;
+                }
+            }
+            
+            // Ensure texture exists before creating sprite
+            if (!scene.textures.exists(spriteKey)) {
+                console.warn(`Texture ${spriteKey} not found, using default`);
+                spriteKey = `player${index}`;
+            }
+            
+            const player = scene.physics.add.sprite(startPos.x, startPos.y, spriteKey);
+            
+            // Debug: Log player creation
+            if (index === currentPlayerIndex) {
+                console.log(`Creating YOUR player (P${index + 1}) with sprite: ${spriteKey} at position ${startPos.x}, ${startPos.y}`);
+            }
+            
+            // Always use same scale for consistency
+            player.setScale(0.25);
+            player.setOrigin(0.5, 0.5); // Ensure origin is centered
+            player.index = index;
+            player.baseSpeed = 1.2 + rng.random() * 0.8; // Further reduced speed range
+            player.currentSpeed = player.baseSpeed;
+            player.speedMultiplier = 1;
+            player.paralyzed = false;
+            player.skills = [];
+            player.biorhythmSpeed = 0.5 + rng.random() * 1.5;
+            player.biorhythmOffset = rng.random() * Math.PI * 2;
+            player.hasBubble = false;
+            player.magnetized = false;
+            player.moveDirection = rng.random() * Math.PI * 2;
+            player.active = true; // Ensure player is marked as active
+            player.lastPositions = []; // Track multiple positions for better stuck detection
+            player.stuckCounter = 0; // Counter to detect if stuck
+            
+            // Set physics body
+            player.body.setSize(48, 48); // Smaller collision box for better navigation
+            player.body.enable = true;
+            player.body.setOffset(40, 40); // Center the smaller collision box
+            player.setVelocity(0, 0); // Ensure no initial velocity
+            
+            // Add player name
+            const name = playerNames[index] || `P${index + 1}`;
+            const isCurrentPlayer = index === currentPlayerIndex;
+            const nameText = scene.add.text(player.x, player.y + 20, name, {
+                fontSize: isCurrentPlayer ? '14px' : '12px',
+                fontFamily: 'Courier New',
+                color: isCurrentPlayer ? '#ffff00' : '#ffffff',
+                stroke: '#000000',
+                strokeThickness: isCurrentPlayer ? 3 : 2
+            }).setOrigin(0.5);
+            
+            player.nameText = nameText;
+            
+            return player;
+        }
+
+        function spawnBooster(scene) {
+            const position = validTrackPositions[Math.floor(rng.random() * validTrackPositions.length)];
+            const boosterType = BOOSTER_TYPES[Math.floor(rng.random() * BOOSTER_TYPES.length)];
+            
+            const booster = scene.physics.add.sprite(position.x, position.y, `booster_${boosterType.name}`);
+            booster.setScale(0.6);
+            booster.boosterType = boosterType;
+            
+            scene.tweens.add({
+                targets: booster,
+                alpha: 0.5,
+                duration: 500,
+                yoyo: true,
+                repeat: -1
+            });
+            
+            boosters.push(booster);
+        }
+
+        function dropSkill(scene) {
+            const position = validTrackPositions[Math.floor(rng.random() * validTrackPositions.length)];
+            const skillType = SKILL_TYPES[Math.floor(rng.random() * SKILL_TYPES.length)];
+            
+            const skill = scene.physics.add.sprite(position.x, position.y - 200, 'skill_base');
+            skill.setScale(0.6);
+            skill.skillType = skillType;
+            skill.setTint(skillType.color);
+            skill.setVelocityY(100); // Reduced from 150
+            
+            skills.push(skill);
+            
+            scene.time.delayedCall(5000, () => {
+                if (skill && skill.active) {
+                    skill.destroy();
+                    skills = skills.filter(s => s !== skill);
+                }
+            });
+        }
+
+        function collectBooster(player, booster) {
+            const scene = currentScene;
+            player.speedMultiplier = booster.boosterType.speedMultiplier;
+            
+            // Get current scale before tweening
+            const currentScale = player.scaleX;
+            
+            scene.tweens.add({
+                targets: player,
+                scaleX: currentScale * 1.5,
+                scaleY: currentScale * 1.5,
+                duration: 200,
+                yoyo: true
+            });
+            
+            const duration = 4000 + rng.random() * 3000;
+            scene.time.delayedCall(duration, () => {
+                player.speedMultiplier = 1;
+            });
+            
+            booster.destroy();
+            boosters = boosters.filter(b => b !== booster);
+        }
+
+        function collectSkill(player, skill) {
+            const scene = currentScene;
+            player.skills.push(skill.skillType);
+            activateSkill(scene, player, skill.skillType);
+            
+            skill.destroy();
+            skills = skills.filter(s => s !== skill);
+        }
+
+        function activateSkill(scene, player, skillType) {
+            switch(skillType.name) {
+                case 'thunder':
+                    const targets = players.filter(p => p !== player);
+                    for (let i = 0; i < 3 && i < targets.length; i++) {
+                        const target = targets[Math.floor(rng.random() * targets.length)];
+                        if (!target.paralyzed) {
+                            target.paralyzed = true;
+                            target.setTint(0xffff00);
+                            
+                            scene.time.delayedCall(3000, () => {
+                                target.paralyzed = false;
+                                target.clearTint();
+                            });
+                        }
+                    }
+                    break;
+                    
+                case 'fire':
+                    const burnTargets = players.filter(p => p !== player)
+                        .sort(() => rng.random() - 0.5)
+                        .slice(0, 2);
+                    
+                    burnTargets.forEach(target => {
+                        target.baseSpeed *= 0.5;
+                        target.setTint(0xff4500);
+                        
+                        scene.time.delayedCall(5000, () => {
+                            target.baseSpeed *= 2;
+                            target.clearTint();
+                        });
+                    });
+                    break;
+                    
+                case 'bubble':
+                    player.hasBubble = true;
+                    const bubble = scene.add.circle(player.x, player.y, 25, 0x00bfff, 0.3);
+                    
+                    const bubbleUpdate = scene.time.addEvent({
+                        delay: 16,
+                        callback: () => {
+                            if (bubble && player && player.active) {
+                                bubble.x = player.x;
+                                bubble.y = player.y;
+                            }
+                        },
+                        repeat: 500
+                    });
+                    
+                    scene.time.delayedCall(8000, () => {
+                        player.hasBubble = false;
+                        bubble.destroy();
+                        bubbleUpdate.remove();
+                    });
+                    break;
+                    
+                case 'magnet':
+                    player.magnetized = true;
+                    player.setTint(0xff1493);
+                    
+                    scene.time.delayedCall(5000, () => {
+                        player.magnetized = false;
+                        player.clearTint();
+                    });
+                    break;
+                    
+                case 'teleport':
+                    players.forEach(p => {
+                        const newPos = validTrackPositions[Math.floor(rng.random() * validTrackPositions.length)];
+                        p.x = newPos.x;
+                        p.y = newPos.y;
+                        p.stuckCounter = 0; // Reset stuck counter on teleport
+                        
+                        const effect = scene.add.circle(p.x, p.y, 40, 0x9400d3, 0.5);
+                        scene.tweens.add({
+                            targets: effect,
+                            scaleX: 0,
+                            scaleY: 0,
+                            alpha: 0,
+                            duration: 500,
+                            onComplete: () => effect.destroy()
+                        });
+                    });
+                    break;
+            }
+        }
+
+        function playerCollision(player1, player2) {
+            if (player1.hasBubble) {
+                const angle = Phaser.Math.Angle.Between(player1.x, player1.y, player2.x, player2.y);
+                player2.x += Math.cos(angle) * 20; // Reduced from 30
+                player2.y += Math.sin(angle) * 20;
+            }
+            if (player2.hasBubble) {
+                const angle = Phaser.Math.Angle.Between(player2.x, player2.y, player1.x, player1.y);
+                player1.x += Math.cos(angle) * 20;
+                player1.y += Math.sin(angle) * 20;
+            }
+            
+            if (player1.magnetized || player2.magnetized) {
+                const midX = (player1.x + player2.x) / 2;
+                const midY = (player1.y + player2.y) / 2;
+                player1.x = midX - 10;
+                player2.x = midX + 10;
+                player1.y = midY;
+                player2.y = midY;
+            }
+        }
+
+        function applyRandomEvent(scene, player) {
+            const events = [
+                () => {
+                    player.speedMultiplier *= 1.5;
+                    scene.time.delayedCall(2000, () => {
+                        player.speedMultiplier /= 1.5;
+                    });
+                },
+                () => {
+                    player.speedMultiplier *= 0.5;
+                    scene.time.delayedCall(2000, () => {
+                        player.speedMultiplier /= 0.5;
+                    });
+                },
+                () => {
+                    const angle = player.moveDirection || 0;
+                    player.x += Math.cos(angle) * 30;
+                    player.y += Math.sin(angle) * 30;
+                }
+            ];
+            
+            events[Math.floor(rng.random() * events.length)]();
+        }
+
+        function triggerChaosEvent(scene) {
+            const events = [
+                () => {
+                    const pos = validTrackPositions[Math.floor(rng.random() * validTrackPositions.length)];
+                    const zone = scene.add.circle(pos.x, pos.y, 100, 0x00ff00, 0.2);
+                    scene.time.delayedCall(5000, () => zone.destroy());
+                },
+                () => {
+                    const flash = scene.add.rectangle(960, 540, 1920, 1080, 0xffffff, 0.5);
+                    scene.tweens.add({
+                        targets: flash,
+                        alpha: 0,
+                        duration: 300,
+                        onComplete: () => flash.destroy()
+                    });
+                },
+                () => {
+                    scene.cameras.main.shake(500, 0.02);
+                }
+            ];
+            
+            events[Math.floor(rng.random() * events.length)]();
+        }
+
+        function winRace(player, token) {
+            if (!raceActive) return;
+            
+            const scene = currentScene;
+            const magnetizedPlayers = players.filter(p => p.magnetized);
+            const winner = magnetizedPlayers.length > 0 ? magnetizedPlayers[0] : player;
+            
+            raceActive = false;
+            
+            // Update leaderboard
+            updateLeaderboard(winner.index);
+            
+            // Show winner
+            const winnerName = playerNames[winner.index] || `Player ${winner.index + 1}`;
+            const winText = scene.add.text(960, 540, `${winnerName} WINS!`, {
+                fontSize: '96px',
+                fontFamily: 'Courier New',
+                color: '#ffff00',
+                stroke: '#000000',
+                strokeThickness: 8
+            }).setOrigin(0.5);
+            
+            scene.tweens.add({
+                targets: winText,
+                scale: 1.2,
+                duration: 500,
+                yoyo: true,
+                repeat: -1
+            });
+            
+            // Process bets
+            processBets(winner.index);
+            
+            // Update race counter
+            totalRaces++;
+            racesUntilMapChange--;
+            
+            // Check for map rotation
+            if (racesUntilMapChange <= 0 && mapRotationEnabled) {
+                racesUntilMapChange = 3;
+                // Show map selection after reset
+                scene.time.delayedCall(5000, () => {
+                    document.getElementById('map-selection').style.display = 'block';
+                });
+            }
+            
+            // Update UI
+            document.getElementById('races-left').textContent = racesUntilMapChange;
+            
+            // Reset after delay
+            scene.time.delayedCall(5000, resetRace);
+        }
+
+        function createUI(scene) {
+            scene.timerText = scene.add.text(960, 50, 'TIME: 5:00', {
+                fontSize: '48px',
+                fontFamily: 'Courier New',
+                color: '#00ff00',
+                stroke: '#000000',
+                strokeThickness: 4
+            }).setOrigin(0.5);
+            
+            // Add map name display
+            scene.mapText = scene.add.text(960, 100, `Track: ${MAPS[currentMap].name}`, {
+                fontSize: '24px',
+                fontFamily: 'Courier New',
+                color: '#ffff00',
+                stroke: '#000000',
+                strokeThickness: 2
+            }).setOrigin(0.5);
+        }
+
+        function updateTimer() {
+            if (!raceActive) return;
+            
+            const scene = currentScene;
+            gameTime--;
+            const minutes = Math.floor(gameTime / 60);
+            const seconds = gameTime % 60;
+            scene.timerText.setText(`TIME: ${minutes}:${seconds.toString().padStart(2, '0')}`);
+            
+            // Update player positions
+            players.forEach(player => {
+                if (player.nameText) {
+                    player.nameText.x = player.x;
+                    player.nameText.y = player.y + 20;
+                }
+            });
+            
+            if (gameTime <= 0) {
+                raceActive = false;
+                const loseText = scene.add.text(960, 540, 'TIME UP! EVERYONE LOSES!', {
+                    fontSize: '72px',
+                    fontFamily: 'Courier New',
+                    color: '#ff0000',
+                    stroke: '#000000',
+                    strokeThickness: 6
+                }).setOrigin(0.5);
+                
+                // Still update race counter even on timeout
+                totalRaces++;
+                racesUntilMapChange--;
+                
+                if (racesUntilMapChange <= 0 && mapRotationEnabled) {
+                    racesUntilMapChange = 3;
+                    scene.time.delayedCall(5000, () => {
+                        document.getElementById('map-selection').style.display = 'block';
+                    });
+                }
+                
+                document.getElementById('races-left').textContent = racesUntilMapChange;
+                
+                scene.time.delayedCall(5000, resetRace);
+            }
+        }
+
+        function startBettingPhase() {
+            bettingPhase = true;
+            
+            const bettingDiv = document.getElementById('betting-options');
+            const statusDiv = document.getElementById('betting-status');
+            
+            // Show current player info
+            const playerName = playerNames[currentPlayerIndex] || `P${currentPlayerIndex + 1}`;
+            statusDiv.innerHTML = `<p style="color: #ff0;">You are: ${playerName}</p>`;
+            
+            // Show mandatory bet info
+            bettingDiv.innerHTML = '<h4 style="color: #0f0; text-align: center;">PREPARATION PHASE</h4>';
+            bettingDiv.innerHTML += '<p>Mandatory bet placed on join!</p>';
+            
+            // Show current bet amount
+            const currentBet = playerBets[currentPlayerIndex] || 0;
+            if (currentBet > 0) {
+                bettingDiv.innerHTML += `<p style="color: #0f0;">Your bet: ${currentBet} coins</p>`;
+                
+                // Allow additional betting
+                const addBetButton = document.createElement('button');
+                addBetButton.textContent = 'ADD 100 MORE COINS';
+                addBetButton.onclick = () => placeBet(currentPlayerIndex);
+                bettingDiv.appendChild(addBetButton);
+            } else {
+                bettingDiv.innerHTML += '<p style="color: #f00;">Join the race to place mandatory bet!</p>';
+            }
+            
+            const betAmount = document.createElement('p');
+            betAmount.id = 'bet-amount';
+            betAmount.style.color = '#0f0';
+            bettingDiv.appendChild(betAmount);
+            
+            // Countdown (30 seconds for preparation)
+            let countdown = 30;
+            const countdownDiv = document.createElement('div');
+            countdownDiv.style.cssText = 'margin-top: 10px; font-size: 24px; color: #ff0; text-align: center; font-weight: bold;';
+            bettingDiv.appendChild(countdownDiv);
+            
+            // Also add countdown to game screen
+            if (currentScene) {
+                const countdownText = currentScene.add.text(960, 150, '', {
+                    fontSize: '64px',
+                    fontFamily: 'Courier New',
+                    color: '#ffff00',
+                    stroke: '#000000',
+                    strokeThickness: 4
+                }).setOrigin(0.5);
+                
+                const prepText = currentScene.add.text(960, 90, 'PREPARATION PHASE', {
+                    fontSize: '32px',
+                    fontFamily: 'Courier New',
+                    color: '#00ff00',
+                    stroke: '#000000',
+                    strokeThickness: 3
+                }).setOrigin(0.5);
+                
+                const countdownInterval = setInterval(() => {
+                    countdown--;
+                    countdownDiv.textContent = `Race starts in: ${countdown}s`;
+                    countdownText.setText(`${countdown}`);
+                    
+                    if (countdown <= 10) {
+                        countdownDiv.style.color = '#f00'; // Red for last 10 seconds
+                        countdownText.setColor('#ff0000');
+                    }
+                    
+                    if (countdown <= 0) {
+                        clearInterval(countdownInterval);
+                        bettingPhase = false;
+                        raceActive = true;
+                        bettingDiv.innerHTML = '<p style="color: #ff0; font-size: 20px; text-align: center;">RACE IN PROGRESS!</p>';
+                        
+                        // Remove countdown texts
+                        countdownText.destroy();
+                        prepText.destroy();
+                        
+                        // Show GO! message
+                        const goText = currentScene.add.text(960, 540, 'GO!', {
+                            fontSize: '128px',
+                            fontFamily: 'Courier New',
+                            color: '#00ff00',
+                            stroke: '#000000',
+                            strokeThickness: 8
+                        }).setOrigin(0.5);
+                        
+                        currentScene.tweens.add({
+                            targets: goText,
+                            scale: 1.5,
+                            alpha: 0,
+                            duration: 1000,
+                            onComplete: () => goText.destroy()
+                        });
+                        
+                        // Ensure all players are active when race starts
+                        players.forEach((player, idx) => {
+                            if (player) {
+                                player.active = true;
+                                player.stuckCounter = 0;
+                            }
+                        });
+                    }
+                }, 1000);
+            }
+        }
+
+        function placeBet(playerIndex) {
+            if (!bettingPhase || playerIndex !== currentPlayerIndex) return;
+            
+            const betAmount = 100;
+            playerBets[playerIndex] = (playerBets[playerIndex] || 0) + betAmount;
+            
+            const betAmountEl = document.getElementById('bet-amount');
+            if (betAmountEl) {
+                betAmountEl.textContent = `Total bet: ${playerBets[playerIndex]} coins`;
+            }
+        }
+
+        function processBets(winnerIndex) {
+            const totalBets = Object.values(playerBets).reduce((sum, bet) => sum + bet, 0);
+            const winningBets = playerBets[winnerIndex] || 0;
+            
+            if (winningBets > 0 && totalBets > 0) {
+                const payout = winningBets * 3; // 3x payout for winning your own bet
+                
+                if (!leaderboardData[winnerIndex]) {
+                    leaderboardData[winnerIndex] = {
+                        name: playerNames[winnerIndex] || `P${winnerIndex + 1}`,
+                        wins: 0,
+                        totalScore: 0,
+                        races: 0,
+                        earnings: 0
+                    };
+                }
+                
+                leaderboardData[winnerIndex].earnings += payout;
+                
+                if (winnerIndex === currentPlayerIndex) {
+                    alert(`You won ${payout} coins!`);
+                }
+            }
+            
+            // Deduct bets from losers
+            for (let i = 0; i < 6; i++) {
+                if (i !== winnerIndex && playerBets[i] > 0) {
+                    if (!leaderboardData[i]) {
+                        leaderboardData[i] = {
+                            name: playerNames[i] || `P${i + 1}`,
+                            wins: 0,
+                            totalScore: 0,
+                            races: 0,
+                            earnings: 0
+                        };
+                    }
+                    leaderboardData[i].earnings -= playerBets[i];
+                    
+                    if (i === currentPlayerIndex) {
+                        alert(`You lost ${playerBets[i]} coins!`);
+                    }
+                }
+            }
+        }
+
+        function updateLeaderboard(winnerIndex) {
+            // Initialize data for all players
+            for (let i = 0; i < 6; i++) {
+                if (!leaderboardData[i]) {
+                    leaderboardData[i] = {
+                        name: playerNames[i] || `P${i + 1}`,
+                        wins: 0,
+                        totalScore: 0,
+                        races: 0,
+                        earnings: 0
+                    };
+                }
+            }
+            
+            // Update winner
+            leaderboardData[winnerIndex].wins++;
+            leaderboardData[winnerIndex].totalScore += 100;
+            
+            // Update races for all
+            for (let i = 0; i < 6; i++) {
+                leaderboardData[i].races++;
+            }
+            
+            updateLeaderboardDisplay();
+        }
+
+        function updateLeaderboardDisplay() {
+            const sortedPlayers = Object.entries(leaderboardData)
+                .map(([index, data]) => ({
+                    name: data.name,
+                    winRate: data.races > 0 ? (data.wins / data.races * 100).toFixed(1) : '0.0',
+                    score: data.totalScore,
+                    earnings: data.earnings,
+                    combined: data.races > 0 ? (data.wins / data.races) * data.totalScore + data.earnings : 0
+                }))
+                .sort((a, b) => b.combined - a.combined);
+            
+            const leaderboardDiv = document.getElementById('leaderboard-list');
+            leaderboardDiv.innerHTML = sortedPlayers.slice(0, 10)
+                .map((data, i) => `
+                    <p style="margin: 5px 0; ${data.name === (playerNames[currentPlayerIndex] || `P${currentPlayerIndex + 1}`) ? 'color: #ff0;' : ''}">
+                        ${i + 1}. ${data.name}<br>
+                        <span style="font-size: 12px;">
+                            Win: ${data.winRate}% | Score: ${data.score} | Coins: ${data.earnings}
+                        </span>
+                    </p>
+                `).join('');
+        }
+
+        function resetRace() {
+            gameTime = 300;
+            raceActive = false;
+            
+            // Clear stuck positions for new race
+            stuckPositions = {};
+            
+            // Get ONE new random position for ALL players
+            let newStartPosition;
+            let attempts = 0;
+            
+            // Ensure we find a valid position with enough space
+            do {
+                newStartPosition = validTrackPositions[Math.floor(rng.random() * validTrackPositions.length)];
+                attempts++;
+                
+                let validSpace = true;
+                for (let testX = -30; testX <= 30; testX += 30) {
+                    for (let testY = -15; testY <= 15; testY += 30) {
+                        if (!isPositionOnTrack(newStartPosition.x + testX, newStartPosition.y + testY)) {
+                            validSpace = false;
+                            break;
+                        }
+                    }
+                    if (!validSpace) break;
+                }
+                
+                if (validSpace) break;
+            } while (attempts < 100);
+            
+            // Reset players to the same position (slightly spread)
+            players.forEach((player, i) => {
+                if (!player) return;
+                
+                // Same arrangement as initial creation
+                const col = i % 3;
+                const row = Math.floor(i / 3);
+                const offsetX = (col - 1) * 30;
+                const offsetY = row * 30 - 15;
+                
+                player.x = newStartPosition.x + offsetX;
+                player.y = newStartPosition.y + offsetY;
+                player.currentSpeed = player.baseSpeed;
+                player.speedMultiplier = 1;
+                player.paralyzed = false;
+                player.skills = [];
+                player.hasBubble = false;
+                player.magnetized = false;
+                player.clearTint();
+                player.setVelocity(0, 0);
+                player.moveDirection = rng.random() * Math.PI * 2;
+                player.active = true; // Ensure player remains active
+                player.lastPositions = [];
+                player.stuckCounter = 0;
+                
+                // Always use same scale
+                player.setScale(0.25);
+                
+                if (player.nameText) {
+                    player.nameText.x = player.x;
+                    player.nameText.y = player.y + 20;
+                }
+            });
+            
+            // Show start position indicator
+            const startIndicator = currentScene.add.circle(newStartPosition.x, newStartPosition.y, 40, 0x00ff00, 0.5);
+            const startText = currentScene.add.text(newStartPosition.x, newStartPosition.y, 'START', {
+                fontSize: '16px',
+                fontFamily: 'Courier New',
+                color: '#00ff00',
+                stroke: '#000000',
+                strokeThickness: 2
+            }).setOrigin(0.5);
+            
+            currentScene.tweens.add({
+                targets: [startIndicator, startText],
+                alpha: 0,
+                scale: 3,
+                duration: 2000,
+                onComplete: () => {
+                    startIndicator.destroy();
+                    startText.destroy();
+                }
+            });
+            
+            // Move M token to new farthest position from start
+            const newTokenPos = getFarthestPositionFromStart(newStartPosition);
+            mToken.x = newTokenPos.x;
+            mToken.y = newTokenPos.y;
+            
+            // Clear items
+            boosters.forEach(b => b.destroy());
+            skills.forEach(s => s.destroy());
+            boosters = [];
+            skills = [];
+            
+            // Clear text
+            currentScene.children.list.forEach(child => {
+                if (child.type === 'Text' && child.text && (child.text.includes('WINS') || child.text.includes('LOSES'))) {
+                    child.destroy();
+                }
+            });
+            
+            // Don't reset bets - they persist
+            startBettingPhase();
+        }
+
+        // Initialize map selection and leaderboard display
+        initializeMapSelection();
+        updateLeaderboardDisplay();
+    </script>
+</body>
+</html>

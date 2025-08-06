@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map Selection Panel Demo - Memex Racing</title>
+    <link rel="stylesheet" href="../styles/game-ui.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Courier New', monospace;
+            color: #00ff00;
+        }
+        
+        .demo-container {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .demo-button {
+            background: #00ff00;
+            color: #000;
+            border: none;
+            padding: 12px 24px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 4px;
+            margin: 10px;
+            transition: all 0.2s ease;
+        }
+        
+        .demo-button:hover {
+            background: #00cc00;
+            transform: translateY(-1px);
+        }
+        
+        .demo-info {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            border: 2px solid #00ff00;
+            border-radius: 8px;
+            background: rgba(0, 255, 0, 0.05);
+        }
+        
+        .demo-info h2 {
+            color: #00ff00;
+            margin-top: 0;
+        }
+        
+        .demo-info ul {
+            text-align: left;
+            color: #ccc;
+        }
+        
+        .demo-info li {
+            margin: 8px 0;
+        }
+        
+        .keyboard-shortcuts {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #888;
+        }
+        
+        .keyboard-shortcuts kbd {
+            background: #333;
+            color: #00ff00;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <h1 style="color: #00ff00; margin-bottom: 30px;">Map Selection Panel Demo</h1>
+        
+        <div class="demo-info">
+            <h2>Map Selection Panel Features</h2>
+            <ul>
+                <li><strong>6 Unique Maps:</strong> Classic Maze, Speed Circuit, Serpentine Path, Grid Lock, Spiral Madness, and Island Hopper</li>
+                <li><strong>Visual Previews:</strong> Each map shows a mini preview with difficulty rating</li>
+                <li><strong>Map Rotation:</strong> Automatic rotation every 3 races with counter display</li>
+                <li><strong>Interactive Selection:</strong> Click to select, hover for preview</li>
+                <li><strong>Random Selection:</strong> Let the system pick a map for you</li>
+                <li><strong>Keyboard Support:</strong> Full keyboard navigation and shortcuts</li>
+                <li><strong>Responsive Design:</strong> Works on desktop, tablet, and mobile</li>
+            </ul>
+        </div>
+        
+        <button class="demo-button" onclick="showMapSelection()">Show Map Selection Panel</button>
+        <button class="demo-button" onclick="autoRotateDemo()">Demo Auto Rotation</button>
+        <button class="demo-button" onclick="randomMapDemo()">Random Map Demo</button>
+        
+        <div class="keyboard-shortcuts">
+            <p><strong>Keyboard Shortcuts:</strong></p>
+            <p><kbd>M</kbd> Toggle Map Selection | <kbd>Enter</kbd> Confirm | <kbd>Esc</kbd> Cancel | <kbd>R</kbd> Random Map</p>
+        </div>
+    </div>
+
+    <!-- UI Overlay Container -->
+    <div id="ui-overlay" class="ui-overlay">
+        <div id="map-selection-panel" class="modal-overlay hidden">
+            <!-- MapSelectionPanel content will be inserted here -->
+        </div>
+    </div>
+
+    <script type="module">
+        // Simple demo implementation of the MapSelectionPanel
+        class MapSelectionDemo {
+            constructor() {
+                this.isVisible = false;
+                this.selectedMap = 'classic';
+                this.currentMap = 'classic';
+                this.racesUntilRotation = 3;
+                this.totalRaces = 0;
+                
+                this.MAPS = {
+                    classic: {
+                        name: "Classic Maze",
+                        description: "The original challenging maze",
+                        difficulty: "Medium",
+                        backgroundColor: 0x1a3a1a,
+                        trackColor: 0xffffff
+                    },
+                    speedway: {
+                        name: "Speed Circuit",
+                        description: "Wide tracks for high-speed racing",
+                        difficulty: "Easy",
+                        backgroundColor: 0x222222,
+                        trackColor: 0xffcc00
+                    },
+                    serpentine: {
+                        name: "Serpentine Path",
+                        description: "Winding snake-like track",
+                        difficulty: "Hard",
+                        backgroundColor: 0x0a0a2a,
+                        trackColor: 0x00ffff
+                    },
+                    grid: {
+                        name: "Grid Lock",
+                        description: "City block style grid",
+                        difficulty: "Medium",
+                        backgroundColor: 0x2a2a2a,
+                        trackColor: 0xff00ff
+                    },
+                    spiral: {
+                        name: "Spiral Madness",
+                        description: "Hypnotic spiral track",
+                        difficulty: "Very Hard",
+                        backgroundColor: 0x2a0a0a,
+                        trackColor: 0xffff00
+                    },
+                    islands: {
+                        name: "Island Hopper",
+                        description: "Connected island tracks",
+                        difficulty: "Medium",
+                        backgroundColor: 0x0a2a2a,
+                        trackColor: 0x00ff00
+                    }
+                };
+                
+                this.initialize();
+            }
+            
+            initialize() {
+                this.createPanelContent();
+                this.setupEventListeners();
+                this.initializeMapPreviews();
+            }
+            
+            createPanelContent() {
+                const panel = document.getElementById('map-selection-panel');
+                if (!panel) return;
+
+                panel.innerHTML = `
+                    <div class="map-selection-overlay">
+                        <div class="map-selection-modal">
+                            <div class="panel-header">
+                                <div class="panel-title">
+                                    <span class="title-text pixel-text">SELECT TRACK</span>
+                                    <div class="rotation-info">
+                                        <span class="rotation-text">Maps rotate every 3 races!</span>
+                                        <div class="race-counter">
+                                            <span class="label">Races until rotation:</span>
+                                            <span class="value" id="races-remaining">${this.racesUntilRotation}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="panel-body map-selection-content">
+                                <div class="maps-grid" id="maps-grid">
+                                    <!-- Map options will be dynamically generated -->
+                                </div>
+                                
+                                <div class="selection-info" id="selection-info">
+                                    <div class="selected-map-details">
+                                        <div class="map-name" id="selected-map-name">Classic Maze</div>
+                                        <div class="map-description" id="selected-map-description">The original challenging maze</div>
+                                        <div class="map-difficulty" id="selected-map-difficulty">
+                                            <span class="difficulty-label">Difficulty:</span>
+                                            <span class="difficulty-value">Medium</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="selection-controls">
+                                    <button class="action-btn confirm-btn" id="confirm-map-btn">
+                                        <span class="btn-icon">✓</span>
+                                        CONFIRM SELECTION
+                                    </button>
+                                    <button class="action-btn random-btn" id="random-map-btn">
+                                        <span class="btn-icon">🎲</span>
+                                        RANDOM MAP
+                                    </button>
+                                    <button class="action-btn cancel-btn" id="cancel-selection-btn">
+                                        <span class="btn-icon">✕</span>
+                                        CANCEL
+                                    </button>
+                                </div>
+                                
+                                <div class="current-map-info" id="current-map-info">
+                                    <div class="info-row">
+                                        <span class="label">Current Track:</span>
+                                        <span class="value" id="current-map-name">Classic Maze</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span class="label">Total Races:</span>
+                                        <span class="value" id="total-races-count">${this.totalRaces}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            setupEventListeners() {
+                // Confirm selection button
+                const confirmBtn = document.getElementById('confirm-map-btn');
+                if (confirmBtn) {
+                    confirmBtn.addEventListener('click', () => this.confirmSelection());
+                }
+
+                // Random map button
+                const randomBtn = document.getElementById('random-map-btn');
+                if (randomBtn) {
+                    randomBtn.addEventListener('click', () => this.selectRandomMap());
+                }
+
+                // Cancel button
+                const cancelBtn = document.getElementById('cancel-selection-btn');
+                if (cancelBtn) {
+                    cancelBtn.addEventListener('click', () => this.hide());
+                }
+
+                // Keyboard shortcuts
+                document.addEventListener('keydown', (e) => {
+                    if (!this.isVisible) return;
+                    
+                    switch(e.key) {
+                        case 'Enter':
+                            this.confirmSelection();
+                            break;
+                        case 'Escape':
+                            this.hide();
+                            break;
+                        case 'r':
+                        case 'R':
+                            this.selectRandomMap();
+                            break;
+                    }
+                });
+
+                // Close on overlay click
+                const overlay = document.querySelector('.map-selection-overlay');
+                if (overlay) {
+                    overlay.addEventListener('click', (e) => {
+                        if (e.target === overlay) {
+                            this.hide();
+                        }
+                    });
+                }
+            }
+            
+            initializeMapPreviews() {
+                const mapsGrid = document.getElementById('maps-grid');
+                if (!mapsGrid) return;
+
+                mapsGrid.innerHTML = '';
+
+                Object.entries(this.MAPS).forEach(([mapKey, mapData]) => {
+                    const mapOption = this.createMapOption(mapKey, mapData);
+                    mapsGrid.appendChild(mapOption);
+                });
+
+                this.updateSelectedMap(this.selectedMap);
+            }
+            
+            createMapOption(mapKey, mapData) {
+                const mapOption = document.createElement('div');
+                mapOption.className = 'map-option';
+                mapOption.dataset.mapKey = mapKey;
+                
+                if (mapKey === this.selectedMap) {
+                    mapOption.classList.add('selected');
+                }
+                
+                mapOption.innerHTML = `
+                    <div class="map-preview">
+                        <div style="width: 100%; height: 100%; background: #${mapData.backgroundColor.toString(16).padStart(6, '0')}; display: flex; align-items: center; justify-content: center; color: #${mapData.trackColor.toString(16).padStart(6, '0')}; font-weight: bold;">
+                            ${mapData.name.split(' ')[0]}
+                        </div>
+                    </div>
+                    <div class="map-info">
+                        <div class="map-title">${mapData.name}</div>
+                        <div class="map-difficulty-badge difficulty-${mapData.difficulty.toLowerCase().replace(' ', '-')}">
+                            ${mapData.difficulty}
+                        </div>
+                    </div>
+                `;
+                
+                mapOption.addEventListener('click', () => {
+                    this.selectMap(mapKey);
+                });
+                
+                mapOption.addEventListener('mouseenter', () => {
+                    this.previewMap(mapKey);
+                });
+                
+                return mapOption;
+            }
+            
+            show() {
+                const panel = document.getElementById('map-selection-panel');
+                if (panel) {
+                    panel.style.display = 'block';
+                    this.isVisible = true;
+                    this.updateCurrentMapInfo();
+                }
+            }
+            
+            hide() {
+                const panel = document.getElementById('map-selection-panel');
+                if (panel) {
+                    panel.style.display = 'none';
+                    this.isVisible = false;
+                }
+            }
+            
+            selectMap(mapKey) {
+                if (!this.MAPS[mapKey]) return;
+                
+                this.selectedMap = mapKey;
+                this.updateSelectedMapVisual();
+                this.updateSelectedMapInfo();
+            }
+            
+            previewMap(mapKey) {
+                if (!this.MAPS[mapKey]) return;
+                this.updateSelectedMapInfo(mapKey);
+            }
+            
+            selectRandomMap() {
+                const mapKeys = Object.keys(this.MAPS);
+                const randomIndex = Math.floor(Math.random() * mapKeys.length);
+                const randomMapKey = mapKeys[randomIndex];
+                
+                this.selectMap(randomMapKey);
+                this.showNotification(`Random map selected: ${this.MAPS[randomMapKey].name}`, 'info');
+            }
+            
+            confirmSelection() {
+                const previousMap = this.currentMap;
+                this.currentMap = this.selectedMap;
+                
+                this.updateCurrentMapInfo();
+                this.hide();
+                
+                this.showNotification(`Map changed to: ${this.MAPS[this.currentMap].name}`, 'success');
+                console.log('Map confirmed:', this.currentMap);
+            }
+            
+            updateSelectedMapVisual() {
+                document.querySelectorAll('.map-option').forEach(option => {
+                    option.classList.remove('selected');
+                });
+                
+                const selectedOption = document.querySelector(`[data-map-key="${this.selectedMap}"]`);
+                if (selectedOption) {
+                    selectedOption.classList.add('selected');
+                }
+            }
+            
+            updateSelectedMapInfo(mapKey = null) {
+                const key = mapKey || this.selectedMap;
+                const mapData = this.MAPS[key];
+                if (!mapData) return;
+                
+                const nameEl = document.getElementById('selected-map-name');
+                const descEl = document.getElementById('selected-map-description');
+                const difficultyEl = document.querySelector('.map-difficulty .difficulty-value');
+                
+                if (nameEl) nameEl.textContent = mapData.name;
+                if (descEl) descEl.textContent = mapData.description;
+                if (difficultyEl) {
+                    difficultyEl.textContent = mapData.difficulty;
+                    difficultyEl.className = `difficulty-value difficulty-${mapData.difficulty.toLowerCase().replace(' ', '-')}`;
+                }
+            }
+            
+            updateCurrentMapInfo() {
+                const currentMapNameEl = document.getElementById('current-map-name');
+                const racesRemainingEl = document.getElementById('races-remaining');
+                const totalRacesEl = document.getElementById('total-races-count');
+                
+                if (currentMapNameEl) {
+                    currentMapNameEl.textContent = this.MAPS[this.currentMap]?.name || 'Unknown';
+                }
+                
+                if (racesRemainingEl) {
+                    racesRemainingEl.textContent = this.racesUntilRotation;
+                }
+                
+                if (totalRacesEl) {
+                    totalRacesEl.textContent = this.totalRaces;
+                }
+            }
+            
+            onRaceCompleted() {
+                this.totalRaces++;
+                this.racesUntilRotation--;
+                
+                if (this.racesUntilRotation <= 0) {
+                    this.racesUntilRotation = 3;
+                    setTimeout(() => {
+                        this.show();
+                    }, 2000);
+                }
+                
+                this.updateCurrentMapInfo();
+                console.log('Race completed, rotation in:', this.racesUntilRotation);
+            }
+            
+            showNotification(message, type = 'info') {
+                // Simple notification for demo
+                const notification = document.createElement('div');
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: rgba(0, 0, 0, 0.9);
+                    color: ${type === 'success' ? '#00ff00' : type === 'error' ? '#ff0000' : '#00ffff'};
+                    border: 2px solid ${type === 'success' ? '#00ff00' : type === 'error' ? '#ff0000' : '#00ffff'};
+                    padding: 12px 20px;
+                    border-radius: 6px;
+                    font-family: 'Courier New', monospace;
+                    font-weight: bold;
+                    z-index: 10000;
+                `;
+                notification.textContent = message;
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.remove();
+                }, 3000);
+            }
+        }
+
+        // Global demo functions
+        let mapSelectionDemo;
+        
+        window.showMapSelection = function() {
+            if (!mapSelectionDemo) {
+                mapSelectionDemo = new MapSelectionDemo();
+            }
+            mapSelectionDemo.show();
+        };
+        
+        window.autoRotateDemo = function() {
+            if (!mapSelectionDemo) {
+                mapSelectionDemo = new MapSelectionDemo();
+            }
+            mapSelectionDemo.onRaceCompleted();
+            mapSelectionDemo.showNotification('Simulated race completion - check rotation counter!', 'info');
+        };
+        
+        window.randomMapDemo = function() {
+            if (!mapSelectionDemo) {
+                mapSelectionDemo = new MapSelectionDemo();
+            }
+            mapSelectionDemo.show();
+            setTimeout(() => {
+                mapSelectionDemo.selectRandomMap();
+            }, 500);
+        };
+        
+        // Initialize demo on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            // Global keyboard shortcut
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'M' || e.key === 'm') {
+                    if (!mapSelectionDemo) {
+                        mapSelectionDemo = new MapSelectionDemo();
+                    }
+                    if (mapSelectionDemo.isVisible) {
+                        mapSelectionDemo.hide();
+                    } else {
+                        mapSelectionDemo.show();
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

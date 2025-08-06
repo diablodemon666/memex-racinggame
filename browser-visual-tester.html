@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memex Racing Visual Tester</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #1a1a1a;
+            color: #00ff00;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #333;
+            background: #222;
+        }
+        .section h2 {
+            color: #ff6600;
+            margin-top: 0;
+        }
+        .game-frame {
+            width: 100%;
+            height: 600px;
+            border: 2px solid #00ff00;
+            background: #000;
+        }
+        .logs {
+            background: #000;
+            padding: 10px;
+            height: 200px;
+            overflow-y: auto;
+            font-size: 12px;
+            border: 1px solid #333;
+        }
+        .error { color: #ff4444; }
+        .warning { color: #ffaa00; }
+        .info { color: #00aaff; }
+        .success { color: #00ff00; }
+        .button {
+            background: #333;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            padding: 10px 20px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .button:hover {
+            background: #00ff00;
+            color: #000;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-good { background: #00ff00; }
+        .status-warning { background: #ffaa00; }
+        .status-error { background: #ff4444; }
+        .status-unknown { background: #666; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏁 Memex Racing Visual Tester</h1>
+        
+        <div class="section">
+            <h2>Test Controls</h2>
+            <button class="button" onclick="startTest()">🔄 Start Test</button>
+            <button class="button" onclick="clearLogs()">🗑️ Clear Logs</button>
+            <button class="button" onclick="refreshGame()">🔄 Refresh Game</button>
+            <button class="button" onclick="exportReport()">📄 Export Report</button>
+        </div>
+        
+        <div class="section">
+            <h2>Test Results</h2>
+            <div id="test-results">
+                <p><span id="webpack-status" class="status-indicator status-unknown"></span>Webpack Compilation Status: <span id="webpack-text">Testing...</span></p>
+                <p><span id="phaser-status" class="status-indicator status-unknown"></span>Phaser IMAGE Error: <span id="phaser-text">Testing...</span></p>
+                <p><span id="game-status" class="status-indicator status-unknown"></span>Game Loading Status: <span id="game-text">Testing...</span></p>
+                <p><span id="canvas-status" class="status-indicator status-unknown"></span>Canvas Rendering: <span id="canvas-text">Testing...</span></p>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>Game Frame</h2>
+            <iframe id="game-frame" class="game-frame" src="http://localhost:3000"></iframe>
+        </div>
+        
+        <div class="section">
+            <h2>Console Logs</h2>
+            <div id="console-logs" class="logs">
+                <div class="info">Visual tester initialized. Click 'Start Test' to begin analysis.</div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>Error Analysis</h2>
+            <div id="error-analysis">
+                <p>No errors detected yet. Run the test to analyze console output.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let testLogs = [];
+        let testResults = {
+            webpack: { status: 'unknown', message: 'Not tested' },
+            phaser: { status: 'unknown', message: 'Not tested' },
+            game: { status: 'unknown', message: 'Not tested' },
+            canvas: { status: 'unknown', message: 'Not tested' }
+        };
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toISOString();
+            const logEntry = { timestamp, message, type };
+            testLogs.push(logEntry);
+            
+            const logDiv = document.getElementById('console-logs');
+            const logElement = document.createElement('div');
+            logElement.className = type;
+            logElement.innerHTML = `[${timestamp.substr(11, 8)}] ${type.toUpperCase()}: ${message}`;
+            logDiv.appendChild(logElement);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function updateStatus(testType, status, message) {
+            testResults[testType] = { status, message };
+            
+            const statusEl = document.getElementById(`${testType}-status`);
+            const textEl = document.getElementById(`${testType}-text`);
+            
+            statusEl.className = `status-indicator status-${status}`;
+            textEl.textContent = message;
+            
+            log(`${testType.toUpperCase()}: ${message}`, status === 'error' ? 'error' : status === 'warning' ? 'warning' : 'success');
+        }
+
+        async function startTest() {
+            log('Starting comprehensive visual test...', 'info');
+            
+            // Test 1: Check if game loads
+            testGameLoading();
+            
+            // Test 2: Check console for errors
+            setTimeout(() => testConsoleErrors(), 2000);
+            
+            // Test 3: Check canvas rendering
+            setTimeout(() => testCanvasRendering(), 4000);
+            
+            // Test 4: Network requests
+            setTimeout(() => testNetworkRequests(), 6000);
+        }
+
+        function testGameLoading() {
+            const iframe = document.getElementById('game-frame');
+            
+            iframe.onload = function() {
+                try {
+                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                    const gameContainer = iframeDoc.getElementById('game-container');
+                    const errorElement = iframeDoc.querySelector('.error-message');
+                    const loadingElement = iframeDoc.querySelector('.loading');
+                    
+                    if (errorElement) {
+                        updateStatus('game', 'error', `Error found: ${errorElement.textContent.substring(0, 100)}...`);
+                    } else if (loadingElement && loadingElement.style.display !== 'none') {
+                        updateStatus('game', 'warning', 'Game stuck on loading screen');
+                    } else if (gameContainer) {
+                        updateStatus('game', 'good', 'Game container loaded successfully');
+                    } else {
+                        updateStatus('game', 'error', 'Game container not found');
+                    }
+                } catch (e) {
+                    updateStatus('game', 'warning', 'Cannot access iframe content (CORS)');
+                    log('Cross-origin frame access blocked - this is normal for localhost', 'warning');
+                }
+            };
+            
+            iframe.onerror = function() {
+                updateStatus('game', 'error', 'Failed to load game frame');
+            };
+        }
+
+        function testConsoleErrors() {
+            // Since we can't directly access iframe console, we test the bundles
+            fetch('http://localhost:3000/phaser.bundle.js')
+                .then(response => {
+                    if (response.ok) {
+                        updateStatus('phaser', 'good', 'Phaser bundle loaded successfully');
+                        return fetch('http://localhost:3000/main.bundle.js');
+                    } else {
+                        throw new Error('Phaser bundle failed to load');
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        updateStatus('webpack', 'good', 'All bundles loaded successfully');
+                    } else {
+                        throw new Error('Main bundle failed to load');
+                    }
+                })
+                .catch(error => {
+                    updateStatus('webpack', 'error', error.message);
+                    updateStatus('phaser', 'error', 'Bundle loading failed');
+                });
+        }
+
+        function testCanvasRendering() {
+            try {
+                const iframe = document.getElementById('game-frame');
+                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                const canvas = iframeDoc.querySelector('canvas');
+                
+                if (canvas) {
+                    const width = canvas.width || canvas.clientWidth;
+                    const height = canvas.height || canvas.clientHeight;
+                    
+                    if (width > 0 && height > 0) {
+                        updateStatus('canvas', 'good', `Canvas rendered: ${width}x${height}`);
+                    } else {
+                        updateStatus('canvas', 'warning', 'Canvas exists but has no dimensions');
+                    }
+                } else {
+                    updateStatus('canvas', 'error', 'No canvas element found');
+                }
+            } catch (e) {
+                updateStatus('canvas', 'warning', 'Cannot access canvas (CORS protection)');
+            }
+        }
+
+        async function testNetworkRequests() {
+            const bundlesToTest = [
+                'runtime.bundle.js',
+                'phaser.bundle.js',
+                'game-engine.bundle.js',
+                'game-systems.bundle.js',
+                'vendors.bundle.js',
+                'main.bundle.js'
+            ];
+            
+            let successCount = 0;
+            const errors = [];
+            
+            for (const bundle of bundlesToTest) {
+                try {
+                    const response = await fetch(`http://localhost:3000/${bundle}`);
+                    if (response.ok) {
+                        successCount++;
+                        log(`✓ ${bundle} loaded (${Math.round(response.headers.get('content-length') / 1024)}KB)`, 'success');
+                    } else {
+                        errors.push(`${bundle}: ${response.status}`);
+                    }
+                } catch (error) {
+                    errors.push(`${bundle}: ${error.message}`);
+                }
+            }
+            
+            if (errors.length === 0) {
+                log(`All ${successCount} bundles loaded successfully`, 'success');
+            } else {
+                log(`${errors.length} bundle errors: ${errors.join(', ')}`, 'error');
+            }
+        }
+
+        function refreshGame() {
+            const iframe = document.getElementById('game-frame');
+            iframe.src = iframe.src;
+            log('Game frame refreshed', 'info');
+        }
+
+        function clearLogs() {
+            document.getElementById('console-logs').innerHTML = '<div class="info">Logs cleared.</div>';
+            testLogs = [];
+        }
+
+        function exportReport() {
+            const report = {
+                timestamp: new Date().toISOString(),
+                testResults,
+                logs: testLogs,
+                summary: {
+                    webpackStatus: testResults.webpack.status,
+                    phaserStatus: testResults.phaser.status,
+                    gameStatus: testResults.game.status,
+                    canvasStatus: testResults.canvas.status
+                }
+            };
+            
+            const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `memex-racing-test-report-${Date.now()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            log('Test report exported', 'success');
+        }
+
+        // Initialize
+        log('Visual tester ready. Game server should be running on http://localhost:3000', 'info');
+    </script>
+</body>
+</html>

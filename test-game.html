@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memex Racing - Direct Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Courier New', monospace;
+        }
+        #game-container {
+            border: 2px solid #0f0;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+        }
+        #status {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            color: #0f0;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            border: 1px solid #0f0;
+            font-size: 12px;
+        }
+        .error {
+            color: #f00;
+            border-color: #f00;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+</head>
+<body>
+    <div id="status">Initializing...</div>
+    <div id="game-container"></div>
+
+    <script>
+        const status = document.getElementById('status');
+        
+        // Simple test scene
+        class TestScene extends Phaser.Scene {
+            constructor() {
+                super({ key: 'TestScene' });
+            }
+
+            preload() {
+                status.textContent = 'Loading assets...';
+                
+                // Create a simple colored square as a test sprite
+                this.load.image('test-sprite', 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAGklEQVQYV2P8z8Dwn4EIwDiqgGE0EwwmNgAAqgkEA14vMVcAAAAASUVORK5CYII=');
+            }
+
+            create() {
+                status.textContent = 'Game running! Press arrow keys to move.';
+                
+                // Add background
+                this.cameras.main.setBackgroundColor('#111111');
+                
+                // Add title text
+                this.add.text(400, 50, 'MEMEX RACING TEST', {
+                    fontSize: '32px',
+                    color: '#00ff00',
+                    fontFamily: 'Courier New'
+                }).setOrigin(0.5);
+                
+                // Add a simple player sprite
+                this.player = this.add.rectangle(400, 300, 64, 64, 0x00ff00);
+                this.player.setStrokeStyle(2, 0xffffff);
+                
+                // Simple keyboard controls
+                this.cursors = this.input.keyboard.createCursorKeys();
+                
+                // Add some UI elements
+                this.scoreText = this.add.text(10, 10, 'Score: 0', {
+                    fontSize: '16px',
+                    color: '#00ff00'
+                });
+                
+                this.speedText = this.add.text(10, 30, 'Speed: 0', {
+                    fontSize: '16px',
+                    color: '#00ff00'
+                });
+                
+                // Variables for movement
+                this.playerSpeed = 0;
+                this.score = 0;
+                
+                // Add random obstacles
+                for (let i = 0; i < 10; i++) {
+                    const x = Phaser.Math.Between(100, 700);
+                    const y = Phaser.Math.Between(100, 500);
+                    const obstacle = this.add.rectangle(x, y, 32, 32, 0xff0000);
+                    obstacle.setStrokeStyle(1, 0xffffff);
+                }
+                
+                // Add target/goal
+                this.goal = this.add.circle(700, 500, 20, 0xffff00);
+                this.goal.setStrokeStyle(2, 0xffffff);
+                
+                // Timer
+                this.startTime = this.time.now;
+                this.timerText = this.add.text(400, 580, 'Time: 0s', {
+                    fontSize: '16px',
+                    color: '#00ff00'
+                }).setOrigin(0.5);
+            }
+
+            update() {
+                // Simple movement with acceleration
+                if (this.cursors.left.isDown) {
+                    this.player.x -= 5;
+                    this.playerSpeed = 5;
+                } else if (this.cursors.right.isDown) {
+                    this.player.x += 5;
+                    this.playerSpeed = 5;
+                } else {
+                    this.playerSpeed = Math.max(0, this.playerSpeed - 0.1);
+                }
+                
+                if (this.cursors.up.isDown) {
+                    this.player.y -= 5;
+                    this.playerSpeed = 5;
+                } else if (this.cursors.down.isDown) {
+                    this.player.y += 5;
+                    this.playerSpeed = 5;
+                }
+                
+                // Keep player in bounds
+                this.player.x = Phaser.Math.Clamp(this.player.x, 32, 768);
+                this.player.y = Phaser.Math.Clamp(this.player.y, 32, 568);
+                
+                // Check if reached goal
+                const distance = Phaser.Math.Distance.Between(
+                    this.player.x, this.player.y,
+                    this.goal.x, this.goal.y
+                );
+                
+                if (distance < 40) {
+                    this.score += 100;
+                    this.goal.x = Phaser.Math.Between(100, 700);
+                    this.goal.y = Phaser.Math.Between(100, 500);
+                    
+                    // Flash effect
+                    this.cameras.main.flash(100, 0, 255, 0);
+                }
+                
+                // Update UI
+                this.scoreText.setText('Score: ' + this.score);
+                this.speedText.setText('Speed: ' + Math.round(this.playerSpeed));
+                
+                // Update timer
+                const elapsed = Math.floor((this.time.now - this.startTime) / 1000);
+                this.timerText.setText('Time: ' + elapsed + 's');
+            }
+        }
+
+        // Game configuration
+        const config = {
+            type: Phaser.AUTO,
+            width: 800,
+            height: 600,
+            parent: 'game-container',
+            pixelArt: true,
+            scene: TestScene,
+            physics: {
+                default: 'arcade',
+                arcade: {
+                    gravity: { y: 0 },
+                    debug: false
+                }
+            }
+        };
+
+        // Error handling
+        window.addEventListener('error', (e) => {
+            status.textContent = 'Error: ' + e.message;
+            status.className = 'error';
+            console.error(e);
+        });
+
+        // Initialize game
+        try {
+            const game = new Phaser.Game(config);
+            console.log('Game initialized successfully');
+            
+            // Make game available for debugging
+            window.testGame = game;
+        } catch (error) {
+            status.textContent = 'Failed to initialize: ' + error.message;
+            status.className = 'error';
+            console.error(error);
+        }
+    </script>
+</body>
+</html>

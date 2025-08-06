@@ -1,0 +1,803 @@
+/**
+ * Memex Racing - Streaming Overlay Styles
+ * 
+ * Professional streaming overlay styles with multiple themes and layouts.
+ */
+
+/* Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Courier New', monospace;
+    background: transparent;
+    color: #ffffff;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+/* Panel System */
+.overlay-panel {
+    position: absolute;
+    background: rgba(0, 0, 0, 0.85);
+    border: 2px solid #00ff00;
+    border-radius: 8px;
+    padding: 0;
+    min-width: 200px;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    opacity: 0;
+    animation: fadeIn 0.3s ease-out forwards;
+    box-shadow: 0 4px 16px rgba(0, 255, 0, 0.3);
+    transition: all 0.3s ease;
+}
+
+.overlay-panel:hover {
+    border-color: #00ffff;
+    box-shadow: 0 6px 20px rgba(0, 255, 255, 0.4);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Panel Headers */
+.panel-header {
+    background: linear-gradient(90deg, #00ff00, #00cc00);
+    color: #000000;
+    padding: 8px 12px;
+    font-weight: bold;
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 6px 6px 0 0;
+    position: relative;
+}
+
+.panel-header::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #00ff00, transparent);
+    opacity: 0.6;
+}
+
+.panel-title {
+    font-weight: bold;
+}
+
+/* Panel Content */
+.panel-content {
+    padding: 12px;
+}
+
+/* Race Panel */
+.race-panel {
+    top: 20px;
+    left: 20px;
+    min-width: 280px;
+}
+
+.race-timer {
+    font-size: 16px;
+    font-weight: bold;
+    color: #000000;
+    text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.3);
+}
+
+.race-timer.urgent {
+    color: #ff0000;
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+.race-info {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(0, 255, 0, 0.2);
+}
+
+.info-item:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    color: #cccccc;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.info-value {
+    color: #00ff00;
+    font-weight: bold;
+    font-size: 12px;
+}
+
+/* Betting Panel */
+.betting-panel {
+    top: 20px;
+    right: 20px;
+    min-width: 260px;
+}
+
+.betting-timer {
+    font-size: 14px;
+    font-weight: bold;
+    color: #000000;
+}
+
+.betting-timer.warning {
+    color: #ff8800;
+}
+
+.betting-timer.urgent {
+    color: #ff0000;
+    animation: pulse 1s infinite;
+}
+
+.betting-info {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.total-pool {
+    text-align: center;
+    padding: 10px;
+    background: rgba(0, 255, 0, 0.1);
+    border-radius: 6px;
+    border: 1px solid rgba(0, 255, 0, 0.3);
+}
+
+.pool-label {
+    display: block;
+    color: #cccccc;
+    font-size: 11px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+}
+
+.pool-value {
+    display: block;
+    color: #00ff00;
+    font-size: 20px;
+    font-weight: bold;
+    text-shadow: 0 0 8px rgba(0, 255, 0, 0.5);
+}
+
+.betting-status {
+    text-align: center;
+}
+
+.status-text {
+    color: #ffff00;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.status-text.active {
+    color: #00ff00;
+    animation: glow 2s infinite alternate;
+}
+
+@keyframes glow {
+    from { text-shadow: 0 0 5px rgba(0, 255, 0, 0.5); }
+    to { text-shadow: 0 0 15px rgba(0, 255, 0, 0.8); }
+}
+
+/* Standings Panel */
+.standings-panel {
+    bottom: 20px;
+    left: 20px;
+    min-width: 300px;
+    max-height: 400px;
+}
+
+.player-standings {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 350px;
+    overflow-y: auto;
+}
+
+.player-standing {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+    border-left: 3px solid #00ff00;
+    transition: all 0.2s ease;
+}
+
+.player-standing:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-left-color: #00ffff;
+}
+
+.player-standing.first {
+    border-left-color: #ffd700;
+    background: rgba(255, 215, 0, 0.1);
+}
+
+.player-standing.second {
+    border-left-color: #c0c0c0;
+    background: rgba(192, 192, 192, 0.1);
+}
+
+.player-standing.third {
+    border-left-color: #cd7f32;
+    background: rgba(205, 127, 50, 0.1);
+}
+
+.standing-rank {
+    font-size: 14px;
+    font-weight: bold;
+    color: #00ff00;
+    min-width: 25px;
+    text-align: center;
+}
+
+.standing-name {
+    flex: 1;
+    font-size: 12px;
+    color: #ffffff;
+    font-weight: bold;
+}
+
+.standing-stats {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+}
+
+.standing-wins {
+    font-size: 10px;
+    color: #00ff00;
+    font-weight: bold;
+}
+
+.standing-rate {
+    font-size: 9px;
+    color: #cccccc;
+}
+
+/* Player Stats Panel */
+.player-stats-panel {
+    top: 120px;
+    left: 20px;
+    min-width: 280px;
+    max-height: 300px;
+}
+
+.live-players {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.live-player {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+    position: relative;
+}
+
+.live-player.active {
+    border-left: 3px solid #00ff00;
+    background: rgba(0, 255, 0, 0.1);
+}
+
+.live-player.boosted {
+    box-shadow: 0 0 10px rgba(255, 255, 0, 0.5);
+    animation: boost-glow 1s infinite alternate;
+}
+
+@keyframes boost-glow {
+    from { box-shadow: 0 0 10px rgba(255, 255, 0, 0.3); }
+    to { box-shadow: 0 0 15px rgba(255, 255, 0, 0.7); }
+}
+
+.live-player.stunned {
+    opacity: 0.5;
+    filter: grayscale(50%);
+}
+
+.player-name {
+    font-size: 11px;
+    color: #ffffff;
+    font-weight: bold;
+    min-width: 60px;
+}
+
+.player-effects {
+    display: flex;
+    gap: 4px;
+    flex: 1;
+}
+
+.effect-icon {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px;
+    color: #000000;
+    font-weight: bold;
+}
+
+.effect-icon.boosted { background: #ffff00; }
+.effect-icon.magnetized { background: #ff00ff; }
+.effect-icon.bubble { background: #00ffff; }
+.effect-icon.stunned { background: #ff0000; }
+
+.player-distance {
+    font-size: 9px;
+    color: #cccccc;
+    min-width: 40px;
+    text-align: right;
+}
+
+/* Camera Panel */
+.camera-panel {
+    top: 120px;
+    right: 20px;
+    min-width: 200px;
+}
+
+.camera-info {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+/* Activity Panel */
+.activity-panel {
+    bottom: 20px;
+    right: 20px;
+    min-width: 350px;
+    max-height: 200px;
+}
+
+.activity-feed {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.activity-item {
+    padding: 6px 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+    font-size: 11px;
+    color: #cccccc;
+    border-left: 2px solid #00ff00;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.activity-item.bet {
+    border-left-color: #ffff00;
+    color: #ffff00;
+}
+
+.activity-item.win {
+    border-left-color: #00ff00;
+    color: #00ff00;
+}
+
+.activity-item.skill {
+    border-left-color: #ff00ff;
+    color: #ff00ff;
+}
+
+.activity-item.boost {
+    border-left-color: #ffa500;
+    color: #ffa500;
+}
+
+.activity-timestamp {
+    font-size: 9px;
+    color: #666666;
+    float: right;
+}
+
+/* Leaderboard Panel */
+.leaderboard-panel {
+    bottom: 240px;
+    left: 20px;
+    min-width: 300px;
+    max-height: 300px;
+}
+
+.top-players {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.top-player {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+}
+
+.top-player.rank-1 {
+    background: rgba(255, 215, 0, 0.1);
+    border-left: 3px solid #ffd700;
+}
+
+.top-player.rank-2 {
+    background: rgba(192, 192, 192, 0.1);
+    border-left: 3px solid #c0c0c0;
+}
+
+.top-player.rank-3 {
+    background: rgba(205, 127, 50, 0.1);
+    border-left: 3px solid #cd7f32;
+}
+
+.player-rank {
+    font-size: 12px;
+    font-weight: bold;
+    color: #00ff00;
+    min-width: 20px;
+    text-align: center;
+}
+
+.player-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.player-name-lb {
+    font-size: 11px;
+    color: #ffffff;
+    font-weight: bold;
+}
+
+.player-stats-lb {
+    font-size: 9px;
+    color: #cccccc;
+}
+
+/* Connection Status */
+.connection-status {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: rgba(0, 0, 0, 0.8);
+    border-radius: 20px;
+    border: 1px solid #333333;
+    font-size: 10px;
+    z-index: 1000;
+}
+
+.status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #ff0000;
+    animation: blink 1s infinite;
+}
+
+.connection-status.connected .status-indicator {
+    background: #00ff00;
+    animation: none;
+}
+
+.connection-status.connecting .status-indicator {
+    background: #ffff00;
+    animation: pulse 1s infinite;
+}
+
+@keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0.3; }
+}
+
+/* Notification System */
+.notification-container {
+    position: fixed;
+    top: 50px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 1000;
+    max-width: 350px;
+}
+
+.notification {
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: bold;
+    opacity: 0;
+    transform: translateX(100%);
+    animation: notificationIn 0.3s ease-out forwards;
+    position: relative;
+    overflow: hidden;
+}
+
+.notification.success {
+    background: rgba(0, 255, 0, 0.9);
+    color: #000000;
+    border-left: 4px solid #00cc00;
+}
+
+.notification.warning {
+    background: rgba(255, 255, 0, 0.9);
+    color: #000000;
+    border-left: 4px solid #cccc00;
+}
+
+.notification.error {
+    background: rgba(255, 0, 0, 0.9);
+    color: #ffffff;
+    border-left: 4px solid #cc0000;
+}
+
+.notification.info {
+    background: rgba(0, 255, 255, 0.9);
+    color: #000000;
+    border-left: 4px solid #00cccc;
+}
+
+@keyframes notificationIn {
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.notification.fadeOut {
+    animation: notificationOut 0.3s ease-in forwards;
+}
+
+@keyframes notificationOut {
+    to {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+}
+
+/* Debug Panel */
+.debug-panel {
+    bottom: 20px;
+    right: 380px;
+    min-width: 200px;
+    opacity: 0.7;
+}
+
+.debug-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.debug-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+}
+
+.debug-label {
+    color: #cccccc;
+}
+
+.debug-value {
+    color: #00ff00;
+    font-weight: bold;
+}
+
+/* Theme Variations */
+.theme-dark .overlay-panel {
+    background: rgba(0, 0, 0, 0.95);
+    border-color: #333333;
+}
+
+.theme-dark .panel-header {
+    background: linear-gradient(90deg, #333333, #666666);
+    color: #ffffff;
+}
+
+.theme-minimal .overlay-panel {
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid #cccccc;
+    color: #000000;
+}
+
+.theme-minimal .panel-header {
+    background: linear-gradient(90deg, #f0f0f0, #e0e0e0);
+    color: #000000;
+    border-bottom: 1px solid #cccccc;
+}
+
+.theme-minimal .info-value {
+    color: #0066cc;
+}
+
+.theme-racing .overlay-panel {
+    background: rgba(255, 0, 0, 0.85);
+    border-color: #ffff00;
+    color: #ffffff;
+}
+
+.theme-racing .panel-header {
+    background: linear-gradient(90deg, #ffff00, #ff8800);
+    color: #000000;
+}
+
+/* Compact Mode */
+.compact-mode .overlay-panel {
+    padding: 0;
+    min-width: 150px;
+}
+
+.compact-mode .panel-header {
+    padding: 4px 8px;
+    font-size: 10px;
+}
+
+.compact-mode .panel-content {
+    padding: 8px;
+}
+
+.compact-mode .info-item {
+    padding: 2px 0;
+}
+
+.compact-mode .info-label,
+.compact-mode .info-value {
+    font-size: 10px;
+}
+
+/* Position Presets */
+.position-top-left .race-panel,
+.position-top-left .betting-panel,
+.position-top-left .player-stats-panel {
+    top: 20px;
+    left: 20px;
+}
+
+.position-top-right .race-panel,
+.position-top-right .betting-panel,
+.position-top-right .player-stats-panel {
+    top: 20px;
+    right: 20px;
+}
+
+.position-bottom-left .standings-panel,
+.position-bottom-left .leaderboard-panel,
+.position-bottom-left .activity-panel {
+    bottom: 20px;
+    left: 20px;
+}
+
+.position-bottom-right .standings-panel,
+.position-bottom-right .leaderboard-panel,
+.position-bottom-right .activity-panel {
+    bottom: 20px;
+    right: 20px;
+}
+
+/* Responsive Design */
+@media (max-width: 1280px) {
+    .overlay-panel {
+        min-width: 180px;
+    }
+    
+    .compact-mode .overlay-panel {
+        min-width: 130px;
+    }
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(0, 255, 0, 0.5);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 255, 0, 0.7);
+}
+
+/* Animation Performance */
+.overlay-panel,
+.notification,
+.activity-item {
+    will-change: transform, opacity;
+}
+
+/* Print and High Contrast Mode */
+@media print {
+    .overlay-panel {
+        background: white;
+        color: black;
+        border: 1px solid black;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .overlay-panel,
+    .notification,
+    .activity-item {
+        animation: none;
+    }
+}

@@ -1,0 +1,10 @@
+{
+  "buildCommand": "echo 'Using prebuilt dist folder'",
+  "outputDirectory": "dist",
+  "framework": null,
+  "functions": {
+    "api/**/*.js": {
+      "maxDuration": 10
+    }
+  }
+}

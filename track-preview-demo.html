@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Track Preview Demo - Memex Racing</title>
+    <link rel="stylesheet" href="src/ui/styles/game-ui.css">
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #000;
+            color: #00ff00;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .demo-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .demo-header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #00ff00;
+            padding-bottom: 20px;
+        }
+
+        .demo-title {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+
+        .demo-description {
+            font-size: 16px;
+            color: #ccc;
+            line-height: 1.6;
+        }
+
+        .demo-controls {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 30px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .demo-btn {
+            background: #000;
+            color: #00ff00;
+            border: 2px solid #00ff00;
+            border-radius: 4px;
+            padding: 12px 24px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .demo-btn:hover {
+            background: #00ff00;
+            color: #000;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
+        }
+
+        .demo-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .track-editor-container {
+            border: 2px solid #00ff00;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .editor-section {
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #00ff00;
+        }
+
+        .simple-canvas {
+            border: 1px solid #00ff00;
+            background: #fff;
+            cursor: crosshair;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .canvas-tools {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .tool-btn {
+            background: transparent;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            border-radius: 4px;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .tool-btn:hover,
+        .tool-btn.active {
+            background: #00ff00;
+            color: #000;
+        }
+
+        .info-panel {
+            background: rgba(0, 20, 0, 0.8);
+            border: 1px solid #00ff00;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            padding: 5px 0;
+        }
+
+        .info-label {
+            color: #ccc;
+        }
+
+        .info-value {
+            color: #00ff00;
+            font-weight: bold;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-left: 8px;
+        }
+
+        .status-ready { background: #00ff00; }
+        .status-error { background: #ff0000; }
+        .status-warning { background: #ffff00; }
+
+        @media (max-width: 768px) {
+            .demo-controls {
+                flex-direction: column;
+            }
+            
+            .simple-canvas {
+                width: 100%;
+                height: 200px;
+            }
+            
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <div class="demo-header">
+            <h1 class="demo-title">TRACK PREVIEW DEMO</h1>
+            <p class="demo-description">
+                Real-time track preview system for Memex Racing. Draw a track and see live AI players racing on it with collision detection and performance metrics. The preview shows starting positions, M token placement, and validates track design.
+            </p>
+        </div>
+
+        <div class="demo-controls">
+            <button class="demo-btn" id="open-editor">🎨 Open Track Editor</button>
+            <button class="demo-btn" id="toggle-preview" disabled>👁️ Toggle Live Preview</button>
+            <button class="demo-btn" id="start-test-race" disabled>🏁 Start Test Race</button>
+            <button class="demo-btn" id="clear-track">🗑️ Clear Track</button>
+        </div>
+
+        <div class="track-editor-container" id="simple-editor" style="display: none;">
+            <div class="editor-section">
+                <h3 class="section-title">Simple Track Drawing</h3>
+                <div class="canvas-tools">
+                    <button class="tool-btn active" data-tool="brush">🖌️ Brush</button>
+                    <button class="tool-btn" data-tool="eraser">🧽 Eraser</button>
+                    <button class="tool-btn" data-tool="line">📏 Line</button>
+                    <button class="tool-btn" data-tool="circle">⭕ Circle</button>
+                </div>
+                <canvas id="simple-canvas" class="simple-canvas" width="800" height="400"></canvas>
+            </div>
+        </div>
+
+        <div class="info-panel">
+            <h3 class="section-title">System Status</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Track Editor:</span>
+                    <span class="info-value" id="editor-status">Not Loaded <span class="status-indicator status-error"></span></span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Live Preview:</span>
+                    <span class="info-value" id="preview-status">Not Active <span class="status-indicator status-error"></span></span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Physics Engine:</span>
+                    <span class="info-value" id="physics-status">Not Loaded <span class="status-indicator status-error"></span></span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">AI Players:</span>
+                    <span class="info-value" id="ai-status">Not Loaded <span class="status-indicator status-error"></span></span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Track Validation:</span>
+                    <span class="info-value" id="validation-status">No Track <span class="status-indicator status-warning"></span></span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Performance:</span>
+                    <span class="info-value" id="performance-status">N/A <span class="status-indicator status-warning"></span></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Track Editor Panel (initially hidden) -->
+    <div id="track-editor-panel" style="display: none;"></div>
+
+    <!-- Track Preview Panel (initially hidden) -->
+    <div id="track-preview-panel" style="display: none;"></div>
+
+    <script type="module">
+        // Demo implementation
+        let trackEditor = null;
+        let trackPreview = null;
+        let simpleCanvas = null;
+        let simpleCtx = null;
+        let isDrawing = false;
+        let currentTool = 'brush';
+
+        // Mock UIManager for demo
+        const mockUIManager = {
+            configManager: {
+                get: (key, defaultValue) => defaultValue
+            },
+            emit: (event, data) => console.log(`[MockUI] Event: ${event}`, data)
+        };
+
+        // Initialize simple canvas
+        function initSimpleCanvas() {
+            simpleCanvas = document.getElementById('simple-canvas');
+            simpleCtx = simpleCanvas.getContext('2d');
+            simpleCtx.imageSmoothingEnabled = false;
+            
+            // Fill with white (track)
+            simpleCtx.fillStyle = '#ffffff';
+            simpleCtx.fillRect(0, 0, simpleCanvas.width, simpleCanvas.height);
+            
+            // Draw a simple track outline
+            drawSampleTrack();
+            
+            // Add drawing event listeners
+            setupSimpleDrawing();
+        }
+
+        function drawSampleTrack() {
+            simpleCtx.fillStyle = '#000000';
+            simpleCtx.strokeStyle = '#000000';
+            simpleCtx.lineWidth = 20;
+            
+            // Draw track outline (black = walls, white = track)
+            simpleCtx.beginPath();
+            simpleCtx.rect(50, 50, 700, 300);
+            simpleCtx.stroke();
+            
+            // Add some track elements
+            simpleCtx.beginPath();
+            simpleCtx.rect(200, 100, 100, 50);
+            simpleCtx.fill();
+            
+            simpleCtx.beginPath();
+            simpleCtx.rect(500, 250, 100, 50);
+            simpleCtx.fill();
+        }
+
+        function setupSimpleDrawing() {
+            let lastX = 0;
+            let lastY = 0;
+
+            simpleCanvas.addEventListener('mousedown', (e) => {
+                isDrawing = true;
+                const rect = simpleCanvas.getBoundingClientRect();
+                lastX = e.clientX - rect.left;
+                lastY = e.clientY - rect.top;
+            });
+
+            simpleCanvas.addEventListener('mousemove', (e) => {
+                if (!isDrawing) return;
+                
+                const rect = simpleCanvas.getBoundingClientRect();
+                const currentX = e.clientX - rect.left;
+                const currentY = e.clientY - rect.top;
+                
+                simpleCtx.lineWidth = currentTool === 'eraser' ? 30 : 20;
+                simpleCtx.strokeStyle = currentTool === 'eraser' ? '#ffffff' : '#000000';
+                simpleCtx.lineCap = 'round';
+                
+                simpleCtx.beginPath();
+                simpleCtx.moveTo(lastX, lastY);
+                simpleCtx.lineTo(currentX, currentY);
+                simpleCtx.stroke();
+                
+                lastX = currentX;
+                lastY = currentY;
+                
+                // Notify preview if active
+                if (trackPreview && trackPreview.isActive) {
+                    // Copy simple canvas to editor preview canvas
+                    updatePreviewFromSimpleCanvas();
+                }
+            });
+
+            simpleCanvas.addEventListener('mouseup', () => {
+                isDrawing = false;
+            });
+        }
+
+        function updatePreviewFromSimpleCanvas() {
+            if (trackEditor && trackEditor.previewCtx) {
+                // Scale simple canvas to editor size
+                trackEditor.previewCtx.clearRect(0, 0, trackEditor.previewCanvas.width, trackEditor.previewCanvas.height);
+                trackEditor.previewCtx.drawImage(
+                    simpleCanvas,
+                    0, 0, simpleCanvas.width, simpleCanvas.height,
+                    0, 0, trackEditor.previewCanvas.width, trackEditor.previewCanvas.height
+                );
+                
+                if (trackPreview) {
+                    trackPreview.updatePreviewFromTrackEditor();
+                }
+            }
+        }
+
+        // Tool selection
+        document.querySelectorAll('.tool-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                currentTool = e.target.dataset.tool;
+            });
+        });
+
+        // Button handlers
+        document.getElementById('open-editor').addEventListener('click', async () => {
+            try {
+                updateStatus('editor-status', 'Loading...', 'warning');
+                
+                // Import TrackEditor dynamically
+                const { TrackEditor } = await import('./src/ui/components/TrackEditor.js');
+                
+                // Create track editor
+                trackEditor = new TrackEditor(mockUIManager);
+                await trackEditor.initialize();
+                
+                // Create mock preview canvas
+                trackEditor.previewCanvas = document.createElement('canvas');
+                trackEditor.previewCanvas.width = 4000;
+                trackEditor.previewCanvas.height = 2000;
+                trackEditor.previewCtx = trackEditor.previewCanvas.getContext('2d');
+                trackEditor.previewCtx.imageSmoothingEnabled = false;
+                
+                // Copy simple canvas content
+                updatePreviewFromSimpleCanvas();
+                
+                updateStatus('editor-status', 'Ready', 'ready');
+                document.getElementById('toggle-preview').disabled = false;
+                document.getElementById('simple-editor').style.display = 'block';
+                
+                console.log('[Demo] Track Editor loaded successfully');
+            } catch (error) {
+                console.error('[Demo] Failed to load Track Editor:', error);
+                updateStatus('editor-status', 'Error', 'error');
+            }
+        });
+
+        document.getElementById('toggle-preview').addEventListener('click', async () => {
+            if (!trackPreview) {
+                try {
+                    updateStatus('preview-status', 'Loading...', 'warning');
+                    updateStatus('physics-status', 'Loading...', 'warning');
+                    updateStatus('ai-status', 'Loading...', 'warning');
+                    
+                    // Import TrackPreview
+                    const { TrackPreview } = await import('./src/ui/components/TrackPreview.js');
+                    
+                    // Create track preview
+                    trackPreview = new TrackPreview(trackEditor);
+                    await trackPreview.initialize();
+                    
+                    updateStatus('preview-status', 'Active', 'ready');
+                    updateStatus('physics-status', 'Ready', 'ready');
+                    updateStatus('ai-status', 'Ready', 'ready');
+                    updateStatus('validation-status', 'Checking...', 'warning');
+                    
+                    document.getElementById('start-test-race').disabled = false;
+                    
+                    console.log('[Demo] Track Preview loaded successfully');
+                } catch (error) {
+                    console.error('[Demo] Failed to load Track Preview:', error);
+                    updateStatus('preview-status', 'Error', 'error');
+                    updateStatus('physics-status', 'Error', 'error');
+                    updateStatus('ai-status', 'Error', 'error');
+                }
+            }
+            
+            if (trackPreview) {
+                trackPreview.toggle();
+                updateStatus('validation-status', 'Valid Track', 'ready');
+                updateStatus('performance-status', '60 FPS', 'ready');
+            }
+        });
+
+        document.getElementById('start-test-race').addEventListener('click', () => {
+            if (trackPreview) {
+                trackPreview.show();
+                trackPreview.isPlaying = true;
+                trackPreview.togglePlayback();
+                console.log('[Demo] Test race started');
+            }
+        });
+
+        document.getElementById('clear-track').addEventListener('click', () => {
+            if (simpleCtx) {
+                simpleCtx.fillStyle = '#ffffff';
+                simpleCtx.fillRect(0, 0, simpleCanvas.width, simpleCanvas.height);
+                drawSampleTrack();
+                updatePreviewFromSimpleCanvas();
+                updateStatus('validation-status', 'Track Cleared', 'warning');
+            }
+        });
+
+        function updateStatus(elementId, text, status) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                const indicator = element.querySelector('.status-indicator');
+                element.innerHTML = `${text} <span class="status-indicator status-${status}"></span>`;
+            }
+        }
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', () => {
+            initSimpleCanvas();
+            updateStatus('editor-status', 'Not Loaded', 'error');
+            updateStatus('preview-status', 'Not Active', 'error');
+            updateStatus('physics-status', 'Not Loaded', 'error');
+            updateStatus('ai-status', 'Not Loaded', 'error');
+            updateStatus('validation-status', 'Sample Track', 'ready');
+            updateStatus('performance-status', 'N/A', 'warning');
+            
+            console.log('[Demo] Track Preview Demo initialized');
+        });
+    </script>
+</body>
+</html>

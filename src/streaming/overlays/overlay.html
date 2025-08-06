@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memex Racing - Streaming Overlay</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Race Information Panel -->
+    <div id="race-panel" class="overlay-panel race-panel">
+        <div class="panel-header">
+            <span class="panel-title">RACE STATUS</span>
+            <span id="race-timer" class="race-timer">5:00</span>
+        </div>
+        <div class="panel-content">
+            <div class="race-info">
+                <div class="info-item">
+                    <span class="info-label">Race #</span>
+                    <span id="race-number" class="info-value">1</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Map</span>
+                    <span id="current-map" class="info-value">Classic Maze</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Phase</span>
+                    <span id="race-phase" class="info-value">Waiting</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Betting Information Panel -->
+    <div id="betting-panel" class="overlay-panel betting-panel">
+        <div class="panel-header">
+            <span class="panel-title">BETTING POOL</span>
+            <span id="betting-timer" class="betting-timer">30s</span>
+        </div>
+        <div class="panel-content">
+            <div class="betting-info">
+                <div class="total-pool">
+                    <span class="pool-label">Total Pool</span>
+                    <span id="total-pool" class="pool-value">$0</span>
+                </div>
+                <div class="betting-status">
+                    <span id="betting-status-text" class="status-text">Betting Closed</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Player Standings Panel -->
+    <div id="standings-panel" class="overlay-panel standings-panel">
+        <div class="panel-header">
+            <span class="panel-title">CURRENT STANDINGS</span>
+        </div>
+        <div class="panel-content">
+            <div id="player-standings" class="player-standings">
+                <!-- Player standings will be dynamically populated -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Player Stats -->
+    <div id="player-stats-panel" class="overlay-panel player-stats-panel">
+        <div class="panel-header">
+            <span class="panel-title">LIVE STATS</span>
+        </div>
+        <div class="panel-content">
+            <div id="live-players" class="live-players">
+                <!-- Live player data will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Camera Information -->
+    <div id="camera-panel" class="overlay-panel camera-panel">
+        <div class="panel-header">
+            <span class="panel-title">CAMERA</span>
+        </div>
+        <div class="panel-content">
+            <div class="camera-info">
+                <div class="info-item">
+                    <span class="info-label">Mode</span>
+                    <span id="camera-mode" class="info-value">Overview</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Following</span>
+                    <span id="camera-target" class="info-value">None</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity Feed -->
+    <div id="activity-panel" class="overlay-panel activity-panel">
+        <div class="panel-header">
+            <span class="panel-title">RECENT ACTIVITY</span>
+        </div>
+        <div class="panel-content">
+            <div id="activity-feed" class="activity-feed">
+                <!-- Recent activities will be shown here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaderboard Panel -->
+    <div id="leaderboard-panel" class="overlay-panel leaderboard-panel">
+        <div class="panel-header">
+            <span class="panel-title">TOP PLAYERS</span>
+        </div>
+        <div class="panel-content">
+            <div id="top-players" class="top-players">
+                <!-- Top players will be shown here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Connection Status Indicator -->
+    <div id="connection-status" class="connection-status disconnected">
+        <div class="status-indicator"></div>
+        <span class="status-text">Connecting...</span>
+    </div>
+
+    <!-- Notification System -->
+    <div id="notification-container" class="notification-container">
+        <!-- Notifications will appear here -->
+    </div>
+
+    <!-- Debug Information (hidden by default) -->
+    <div id="debug-panel" class="overlay-panel debug-panel" style="display: none;">
+        <div class="panel-header">
+            <span class="panel-title">DEBUG INFO</span>
+        </div>
+        <div class="panel-content">
+            <div id="debug-info" class="debug-info">
+                <div class="debug-item">
+                    <span class="debug-label">FPS:</span>
+                    <span id="debug-fps" class="debug-value">0</span>
+                </div>
+                <div class="debug-item">
+                    <span class="debug-label">Latency:</span>
+                    <span id="debug-latency" class="debug-value">0ms</span>
+                </div>
+                <div class="debug-item">
+                    <span class="debug-label">Updates:</span>
+                    <span id="debug-updates" class="debug-value">0</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlay Configuration (for OBS Browser Source) -->
+    <script>
+        // Configuration for OBS Browser Source
+        const OVERLAY_CONFIG = {
+            // WebSocket connection
+            socketUrl: window.location.hostname === 'localhost' 
+                ? 'http://localhost:3001' 
+                : `http://${window.location.hostname}:3001`,
+            
+            // Update settings
+            autoReconnect: true,
+            reconnectDelay: 2000,
+            maxReconnectAttempts: 10,
+            
+            // Panel visibility
+            panels: {
+                race: true,
+                betting: true,
+                standings: true,
+                playerStats: true,
+                camera: false, // Hidden by default for cleaner overlay
+                activity: true,
+                leaderboard: true,
+            },
+            
+            // Theme settings
+            theme: 'default', // default, dark, minimal, racing
+            compactMode: false,
+            showDebug: false,
+            
+            // Animation settings
+            enableAnimations: true,
+            animationDuration: 300,
+            fadeInDelay: 100,
+            
+            // Data subscriptions
+            subscriptions: ['race', 'betting', 'players', 'leaderboard'],
+            updateRate: 30 // FPS
+        };
+
+        // Apply configuration from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        // Theme override
+        if (urlParams.get('theme')) {
+            OVERLAY_CONFIG.theme = urlParams.get('theme');
+            document.body.classList.add(`theme-${OVERLAY_CONFIG.theme}`);
+        }
+        
+        // Compact mode
+        if (urlParams.get('compact') === 'true') {
+            OVERLAY_CONFIG.compactMode = true;
+            document.body.classList.add('compact-mode');
+        }
+        
+        // Debug mode
+        if (urlParams.get('debug') === 'true') {
+            OVERLAY_CONFIG.showDebug = true;
+            document.getElementById('debug-panel').style.display = 'block';
+        }
+        
+        // Panel visibility overrides
+        ['race', 'betting', 'standings', 'playerStats', 'camera', 'activity', 'leaderboard'].forEach(panel => {
+            const param = urlParams.get(`show-${panel}`);
+            if (param === 'false') {
+                OVERLAY_CONFIG.panels[panel] = false;
+                const element = document.getElementById(`${panel.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`)}-panel`);
+                if (element) element.style.display = 'none';
+            } else if (param === 'true') {
+                OVERLAY_CONFIG.panels[panel] = true;
+                const element = document.getElementById(`${panel.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`)}-panel`);
+                if (element) element.style.display = 'block';
+            }
+        });
+
+        // Position presets
+        const position = urlParams.get('position');
+        if (position) {
+            document.body.classList.add(`position-${position}`);
+        }
+    </script>
+
+    <!-- Load the main overlay script -->
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memex Racing - Track & Background Preview</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background-color: #1a1a1a;
+            color: #00ff00;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: #00ff00;
+            text-shadow: 0 0 10px #00ff00;
+        }
+
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        button {
+            background-color: #00ff00;
+            color: #000;
+            border: none;
+            padding: 10px 30px;
+            font-size: 18px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background-color: #00cc00;
+            box-shadow: 0 0 20px #00ff00;
+        }
+
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .preview-card {
+            background-color: #2a2a2a;
+            border: 2px solid #00ff00;
+            border-radius: 8px;
+            padding: 10px;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+        }
+
+        .preview-card h3 {
+            margin: 0 0 10px 0;
+            text-align: center;
+            color: #00ffff;
+            font-size: 16px;
+        }
+
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            height: 200px;
+            background-color: #000;
+            border: 1px solid #444;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: #ffff00;
+        }
+
+        .stats {
+            text-align: center;
+            margin: 20px 0;
+            color: #00ffff;
+        }
+
+        .error {
+            color: #ff0000;
+            text-align: center;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🏁 Memex Racing Track Preview 🏁</h1>
+    
+    <div class="stats">
+        <p>10 Track Templates × 10 Backgrounds = 100 Unique Racing Experiences!</p>
+    </div>
+
+    <div class="controls">
+        <button onclick="generateRandomCombinations()">🎲 Generate New Combinations</button>
+        <button onclick="showAllCombinations()">📊 Show All (100)</button>
+    </div>
+
+    <div id="previewContainer" class="preview-grid">
+        <div class="loading">Loading preview...</div>
+    </div>
+
+    <script>
+        // Configuration
+        const TRACKS_PATH = 'src/assets/maps/tracks/';
+        const BACKGROUNDS_PATH = 'src/assets/maps/backgrounds/';
+        const TRACK_COUNT = 10;
+        const BACKGROUND_COUNT = 10;
+        const PREVIEW_COUNT = 9; // Show 9 random combinations by default
+
+        // Track and background file lists
+        const tracks = Array.from({length: TRACK_COUNT}, (_, i) => `template${i + 1}.png`);
+        const backgrounds = [
+            'map1.jpeg', 'map2.jpeg', 'map3.png', 'map4.jpeg', 
+            'map5.jpeg', 'map6.jpeg', 'map7.jpeg', 'map8.png', 
+            'map9.png', 'map10.png'
+        ];
+
+        // Get random items from array
+        function getRandomItems(array, count) {
+            const shuffled = [...array].sort(() => 0.5 - Math.random());
+            return shuffled.slice(0, count);
+        }
+
+        // Generate random combinations
+        function generateRandomCombinations() {
+            const container = document.getElementById('previewContainer');
+            container.innerHTML = '<div class="loading">Generating random combinations...</div>';
+
+            const combinations = [];
+            const usedCombos = new Set();
+
+            while (combinations.length < PREVIEW_COUNT) {
+                const track = tracks[Math.floor(Math.random() * tracks.length)];
+                const background = backgrounds[Math.floor(Math.random() * backgrounds.length)];
+                const comboKey = `${track}-${background}`;
+
+                if (!usedCombos.has(comboKey)) {
+                    usedCombos.add(comboKey);
+                    combinations.push({ track, background });
+                }
+            }
+
+            displayCombinations(combinations);
+        }
+
+        // Show all possible combinations
+        function showAllCombinations() {
+            const container = document.getElementById('previewContainer');
+            container.innerHTML = '<div class="loading">Loading all 100 combinations...</div>';
+
+            const combinations = [];
+            for (const track of tracks) {
+                for (const background of backgrounds) {
+                    combinations.push({ track, background });
+                }
+            }
+
+            // Shuffle for variety
+            combinations.sort(() => 0.5 - Math.random());
+            displayCombinations(combinations);
+        }
+
+        // Display combinations
+        async function displayCombinations(combinations) {
+            const container = document.getElementById('previewContainer');
+            container.innerHTML = '';
+
+            for (const combo of combinations) {
+                const card = createPreviewCard(combo);
+                container.appendChild(card);
+            }
+        }
+
+        // Create a preview card for a combination
+        function createPreviewCard(combo) {
+            const card = document.createElement('div');
+            card.className = 'preview-card';
+
+            const title = document.createElement('h3');
+            const trackNum = combo.track.match(/\d+/)[0];
+            const bgNum = combo.background.match(/\d+/)[0];
+            title.textContent = `Track ${trackNum} + Background ${bgNum}`;
+            card.appendChild(title);
+
+            const canvasContainer = document.createElement('div');
+            canvasContainer.className = 'canvas-container';
+
+            const canvas = document.createElement('canvas');
+            canvas.width = 800; // Scaled down from 4000
+            canvas.height = 400; // Scaled down from 2000
+            canvasContainer.appendChild(canvas);
+            card.appendChild(canvasContainer);
+
+            // Load and composite images
+            loadAndComposite(canvas, combo);
+
+            return card;
+        }
+
+        // Load images and composite them
+        async function loadAndComposite(canvas, combo) {
+            const ctx = canvas.getContext('2d');
+            
+            try {
+                // Load background first
+                const bgImg = new Image();
+                bgImg.crossOrigin = 'anonymous';
+                
+                await new Promise((resolve, reject) => {
+                    bgImg.onload = resolve;
+                    bgImg.onerror = reject;
+                    bgImg.src = BACKGROUNDS_PATH + combo.background;
+                });
+
+                // Draw background
+                ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+
+                // Load track overlay
+                const trackImg = new Image();
+                trackImg.crossOrigin = 'anonymous';
+                
+                await new Promise((resolve, reject) => {
+                    trackImg.onload = resolve;
+                    trackImg.onerror = reject;
+                    trackImg.src = TRACKS_PATH + combo.track;
+                });
+
+                // Draw track with transparency
+                ctx.globalAlpha = 0.9; // Slight transparency for track overlay
+                ctx.drawImage(trackImg, 0, 0, canvas.width, canvas.height);
+                ctx.globalAlpha = 1.0;
+
+                // Add combination label
+                ctx.fillStyle = '#00ff00';
+                ctx.font = 'bold 14px Courier New';
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 3;
+                const label = `${combo.track} + ${combo.background}`;
+                ctx.strokeText(label, 10, 25);
+                ctx.fillText(label, 10, 25);
+
+            } catch (error) {
+                // Error loading - show placeholder
+                ctx.fillStyle = '#ff0000';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '16px Courier New';
+                ctx.textAlign = 'center';
+                ctx.fillText('Error loading images', canvas.width / 2, canvas.height / 2);
+                ctx.textAlign = 'left';
+                console.error('Error loading:', combo, error);
+            }
+        }
+
+        // Initialize on load
+        window.onload = () => {
+            generateRandomCombinations();
+        };
+    </script>
+</body>
+</html>

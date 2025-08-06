@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Load Test</title>
+    <style>
+        body { font-family: monospace; background: #1a1a1a; color: #00ff00; padding: 20px; }
+        .test { margin: 20px 0; padding: 10px; border: 1px solid #333; }
+        .error { color: #ff0000; }
+        .success { color: #00ff00; }
+        img { max-width: 200px; max-height: 200px; border: 1px solid #666; }
+    </style>
+</head>
+<body>
+    <h1>Image Loading Test</h1>
+    <div id="results"></div>
+
+    <script>
+        const results = document.getElementById('results');
+        
+        function addResult(message, isError = false) {
+            const div = document.createElement('div');
+            div.className = 'test ' + (isError ? 'error' : 'success');
+            div.innerHTML = message;
+            results.appendChild(div);
+        }
+
+        function testImage(src, description) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                const startTime = Date.now();
+                
+                img.onload = () => {
+                    const loadTime = Date.now() - startTime;
+                    addResult(`✓ ${description}: LOADED (${img.width}x${img.height}) in ${loadTime}ms<br><img src="${src}" alt="test">`);
+                    resolve(true);
+                };
+                
+                img.onerror = (error) => {
+                    const loadTime = Date.now() - startTime;
+                    addResult(`✗ ${description}: FAILED to load in ${loadTime}ms<br>Path: ${src}<br>Error: ${error.type}`, true);
+                    resolve(false);
+                };
+                
+                img.src = src;
+            });
+        }
+
+        async function runTests() {
+            addResult('Starting image load tests...');
+            
+            // Test track images
+            await testImage('src/assets/maps/tracks/template1.png', 'Track Template 1');
+            await testImage('src/assets/maps/tracks/template5.png', 'Track Template 5');
+            await testImage('src/assets/maps/tracks/template10.png', 'Track Template 10');
+            
+            // Test background images
+            await testImage('src/assets/maps/backgrounds/map1.jpeg', 'Background Map 1');
+            await testImage('src/assets/maps/backgrounds/map3.png', 'Background Map 3');
+            await testImage('src/assets/maps/backgrounds/map10.png', 'Background Map 10');
+            
+            // Test non-existent file
+            await testImage('src/assets/maps/tracks/nonexistent.png', 'Non-existent File (should fail)');
+            
+            addResult('Test completed!');
+        }
+
+        // Run tests on page load
+        window.onload = runTests;
+    </script>
+</body>
+</html>

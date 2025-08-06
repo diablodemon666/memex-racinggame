@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Initialization Debug</title>
+    <style>
+        body {
+            background: #000;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            padding: 20px;
+            margin: 0;
+        }
+        #status {
+            border: 2px solid #0f0;
+            padding: 20px;
+            margin: 20px 0;
+            background: rgba(0, 255, 0, 0.05);
+        }
+        .step {
+            padding: 10px;
+            margin: 5px 0;
+            border-left: 3px solid #666;
+        }
+        .step.success {
+            border-color: #0f0;
+            background: rgba(0, 255, 0, 0.1);
+        }
+        .step.error {
+            border-color: #f00;
+            background: rgba(255, 0, 0, 0.1);
+            color: #f00;
+        }
+        .step.pending {
+            border-color: #ff0;
+            background: rgba(255, 255, 0, 0.05);
+            color: #ff0;
+        }
+        pre {
+            background: #111;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎮 Memex Racing - Initialization Debug</h1>
+    <div id="status">
+        <h2>Initialization Steps:</h2>
+        <div id="steps"></div>
+    </div>
+    <div id="game-container" style="display: none;"></div>
+
+    <script>
+        const steps = document.getElementById('steps');
+        let stepCount = 0;
+
+        function addStep(message, status = 'pending', details = null) {
+            const step = document.createElement('div');
+            step.className = `step ${status}`;
+            step.innerHTML = `
+                <strong>Step ${++stepCount}:</strong> ${message}
+                ${details ? `<pre>${JSON.stringify(details, null, 2)}</pre>` : ''}
+            `;
+            steps.appendChild(step);
+            console.log(`[${status.toUpperCase()}] ${message}`, details || '');
+            return step;
+        }
+
+        // Override console.error to catch errors
+        const originalError = console.error;
+        console.error = function(...args) {
+            addStep(`Console Error: ${args.join(' ')}`, 'error');
+            originalError.apply(console, args);
+        };
+
+        // Start initialization test
+        async function testInitialization() {
+            addStep('Starting initialization test...', 'pending');
+
+            // Step 1: Check if we can load the main bundle
+            try {
+                addStep('Checking main bundle...', 'pending');
+                const response = await fetch('/main.bundle.js');
+                if (response.ok) {
+                    const text = await response.text();
+                    addStep(`Main bundle loaded (${text.length} bytes)`, 'success');
+                } else {
+                    addStep(`Failed to load main bundle: ${response.status}`, 'error');
+                    return;
+                }
+            } catch (error) {
+                addStep(`Error loading main bundle: ${error.message}`, 'error');
+                return;
+            }
+
+            // Step 2: Check config module
+            try {
+                addStep('Loading configuration module...', 'pending');
+                const script = document.createElement('script');
+                script.type = 'module';
+                script.textContent = `
+                    import('/src/config/development.js')
+                        .then(module => {
+                            window.postMessage({ type: 'CONFIG_LOADED', data: 'success' }, '*');
+                        })
+                        .catch(error => {
+                            window.postMessage({ type: 'CONFIG_ERROR', error: error.message }, '*');
+                        });
+                `;
+                
+                const configPromise = new Promise((resolve, reject) => {
+                    const handler = (event) => {
+                        if (event.data.type === 'CONFIG_LOADED') {
+                            window.removeEventListener('message', handler);
+                            resolve();
+                        } else if (event.data.type === 'CONFIG_ERROR') {
+                            window.removeEventListener('message', handler);
+                            reject(new Error(event.data.error));
+                        }
+                    };
+                    window.addEventListener('message', handler);
+                    setTimeout(() => reject(new Error('Config load timeout')), 5000);
+                });
+
+                document.body.appendChild(script);
+                await configPromise;
+                addStep('Configuration module loaded', 'success');
+            } catch (error) {
+                addStep(`Configuration module error: ${error.message}`, 'error');
+                // Continue anyway as this might not be critical
+            }
+
+            // Step 3: Test auth initialization
+            try {
+                addStep('Testing authentication initialization...', 'pending');
+                const authScript = document.createElement('script');
+                authScript.type = 'module';
+                authScript.textContent = `
+                    // Mock the auth modules to avoid dependency issues
+                    window.testAuthInit = async function() {
+                        try {
+                            // Return mock auth result
+                            return {
+                                isAuthenticated: false,
+                                user: null
+                            };
+                        } catch (error) {
+                            throw error;
+                        }
+                    };
+                    window.postMessage({ type: 'AUTH_READY' }, '*');
+                `;
+                
+                document.body.appendChild(authScript);
+                
+                await new Promise(resolve => {
+                    window.addEventListener('message', function handler(event) {
+                        if (event.data.type === 'AUTH_READY') {
+                            window.removeEventListener('message', handler);
+                            resolve();
+                        }
+                    });
+                });
+
+                const authResult = await window.testAuthInit();
+                addStep('Authentication check completed', 'success', authResult);
+            } catch (error) {
+                addStep(`Authentication error: ${error.message}`, 'error');
+            }
+
+            // Step 4: Test Phaser loading
+            try {
+                addStep('Testing Phaser.js loading...', 'pending');
+                
+                // Try to load Phaser from CDN as a test
+                const phaserScript = document.createElement('script');
+                phaserScript.src = 'https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js';
+                
+                await new Promise((resolve, reject) => {
+                    phaserScript.onload = resolve;
+                    phaserScript.onerror = reject;
+                    document.body.appendChild(phaserScript);
+                });
+
+                if (typeof Phaser !== 'undefined') {
+                    addStep(`Phaser loaded successfully (version: ${Phaser.VERSION})`, 'success');
+                } else {
+                    addStep('Phaser loaded but not accessible', 'error');
+                }
+            } catch (error) {
+                addStep(`Failed to load Phaser: ${error.message}`, 'error');
+            }
+
+            // Step 5: Test minimal game initialization
+            try {
+                addStep('Testing minimal game initialization...', 'pending');
+                
+                if (typeof Phaser === 'undefined') {
+                    throw new Error('Phaser not available');
+                }
+
+                const testConfig = {
+                    type: Phaser.AUTO,
+                    width: 800,
+                    height: 600,
+                    parent: 'game-container',
+                    scene: {
+                        preload: function() {
+                            console.log('Test scene preload');
+                        },
+                        create: function() {
+                            console.log('Test scene create');
+                            this.add.text(400, 300, 'Game Initialized!', { 
+                                fontSize: '32px', 
+                                color: '#00ff00' 
+                            }).setOrigin(0.5);
+                            window.postMessage({ type: 'GAME_CREATED' }, '*');
+                        }
+                    }
+                };
+
+                const game = new Phaser.Game(testConfig);
+                
+                await new Promise((resolve, reject) => {
+                    const handler = (event) => {
+                        if (event.data.type === 'GAME_CREATED') {
+                            window.removeEventListener('message', handler);
+                            resolve();
+                        }
+                    };
+                    window.addEventListener('message', handler);
+                    setTimeout(() => reject(new Error('Game creation timeout')), 5000);
+                });
+
+                addStep('Minimal game initialized successfully!', 'success');
+                document.getElementById('game-container').style.display = 'block';
+            } catch (error) {
+                addStep(`Game initialization failed: ${error.message}`, 'error');
+            }
+
+            // Final summary
+            const successSteps = document.querySelectorAll('.step.success').length;
+            const errorSteps = document.querySelectorAll('.step.error').length;
+            
+            addStep(
+                `Test completed: ${successSteps} successful, ${errorSteps} failed`,
+                errorSteps === 0 ? 'success' : 'error'
+            );
+        }
+
+        // Start the test
+        testInitialization();
+    </script>
+</body>
+</html>

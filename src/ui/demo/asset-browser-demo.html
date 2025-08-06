@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asset Browser Demo - Memex Racing</title>
+    <link rel="stylesheet" href="../styles/game-ui.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            font-family: 'Courier New', monospace;
+            color: #00ff00;
+            overflow: hidden;
+        }
+        
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(45deg, #001100, #000500);
+        }
+        
+        .demo-info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #00ff00;
+            padding: 10px;
+            border-radius: 4px;
+            z-index: 100;
+        }
+        
+        .demo-controls {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #00ff00;
+            padding: 10px;
+            border-radius: 4px;
+            z-index: 100;
+        }
+        
+        .demo-btn {
+            background: rgba(0, 255, 0, 0.2);
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            padding: 5px 10px;
+            margin: 2px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 12px;
+        }
+        
+        .demo-btn:hover {
+            background: rgba(0, 255, 0, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div class="demo-info">
+            <h3>Asset Browser Demo</h3>
+            <p>Press 'A' to toggle Asset Browser</p>
+            <p>Or use the buttons below</p>
+        </div>
+        
+        <div class="demo-controls">
+            <button class="demo-btn" onclick="toggleAssetBrowser()">Toggle Asset Browser</button>
+            <button class="demo-btn" onclick="switchToPlayers()">Show Players</button>
+            <button class="demo-btn" onclick="switchToBoosters()">Show Boosters</button>
+            <button class="demo-btn" onclick="switchToSkills()">Show Skills</button>
+            <button class="demo-btn" onclick="testUpload()">Test Upload</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { AssetBrowser } from '../components/AssetBrowser.js';
+        
+        // Mock UI Manager for demo
+        class MockUIManager {
+            constructor() {
+                this.game = null;
+                this.playerSetupPanel = {
+                    currentPlayerIndex: 0,
+                    playerCustomImages: {},
+                    updateImagePreview: (dataUrl) => {
+                        console.log('Mock: Updated image preview');
+                    }
+                };
+            }
+        }
+        
+        // Initialize Asset Browser
+        let assetBrowser;
+        let mockUIManager;
+        
+        async function initDemo() {
+            try {
+                // Create UI overlay
+                const gameContainer = document.getElementById('game-container');
+                const uiOverlay = document.createElement('div');
+                uiOverlay.id = 'ui-overlay';
+                uiOverlay.className = 'ui-overlay';
+                gameContainer.appendChild(uiOverlay);
+                
+                // Create asset browser panel
+                const assetBrowserPanel = document.createElement('div');
+                assetBrowserPanel.id = 'asset-browser-panel';
+                assetBrowserPanel.className = 'ui-panel asset-browser hidden';
+                uiOverlay.appendChild(assetBrowserPanel);
+                
+                // Initialize components
+                mockUIManager = new MockUIManager();
+                assetBrowser = new AssetBrowser(mockUIManager);
+                
+                await assetBrowser.initialize();
+                
+                // Make globally accessible for demo
+                window.assetBrowser = assetBrowser;
+                
+                console.log('Asset Browser Demo initialized');
+                
+            } catch (error) {
+                console.error('Demo initialization failed:', error);
+            }
+        }
+        
+        // Demo functions
+        window.toggleAssetBrowser = () => {
+            if (assetBrowser) {
+                assetBrowser.toggle();
+            }
+        };
+        
+        window.switchToPlayers = () => {
+            if (assetBrowser) {
+                assetBrowser.switchCategory('players');
+                if (!assetBrowser.isVisible) {
+                    assetBrowser.show();
+                }
+            }
+        };
+        
+        window.switchToBoosters = () => {
+            if (assetBrowser) {
+                assetBrowser.switchCategory('boosters');
+                if (!assetBrowser.isVisible) {
+                    assetBrowser.show();
+                }
+            }
+        };
+        
+        window.switchToSkills = () => {
+            if (assetBrowser) {
+                assetBrowser.switchCategory('skills');
+                if (!assetBrowser.isVisible) {
+                    assetBrowser.show();
+                }
+            }
+        };
+        
+        window.testUpload = () => {
+            if (assetBrowser) {
+                assetBrowser.switchCategory('custom');
+                if (!assetBrowser.isVisible) {
+                    assetBrowser.show();
+                }
+                alert('Drop image files onto the upload area to test file upload functionality');
+            }
+        };
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (event) => {
+            if (event.code === 'KeyA' && assetBrowser) {
+                event.preventDefault();
+                toggleAssetBrowser();
+            }
+        });
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', initDemo);
+    </script>
+</body>
+</html>

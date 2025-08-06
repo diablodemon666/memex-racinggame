@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="description" content="Memex Racing - Top-down multiplayer racing betting game with retro pixel art">
+    <meta name="keywords" content="racing, game, multiplayer, betting, pixel art, retro">
+    <meta name="author" content="Memex Racing">
+    
+    <!-- Optimize for pixel art rendering -->
+    <meta name="color-scheme" content="dark light">
+    <meta name="theme-color" content="#000000">
+    
+    <!-- Webpack will inject the title and favicon here -->
+    <title><%= htmlWebpackPlugin.options.title %></title>
+    
+    <style>
+        /* Critical CSS for fast loading */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000;
+            font-family: 'Courier New', 'Monaco', 'Lucida Console', monospace;
+        }
+        
+        #game-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(circle, #111 0%, #000 100%);
+            position: relative;
+        }
+        
+        /* Loading screen styling */
+        .loading {
+            color: #00ff00;
+            text-align: center;
+            font-size: 16px;
+            opacity: 0.8;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+        
+        .loading::after {
+            content: '';
+            animation: dots 1s infinite;
+        }
+        
+        @keyframes dots {
+            0%, 20% { content: ''; }
+            40% { content: '.'; }
+            60% { content: '..'; }
+            80%, 100% { content: '...'; }
+        }
+        
+        /* Pixel art optimization */
+        canvas {
+            image-rendering: -moz-crisp-edges;
+            image-rendering: -webkit-crisp-edges;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+        
+        /* Error message styling */
+        .error-message {
+            color: #ff4444;
+            text-align: center;
+            padding: 20px;
+            background: rgba(255, 68, 68, 0.1);
+            border: 1px solid #ff4444;
+            border-radius: 4px;
+            margin: 20px;
+            font-family: inherit;
+            box-shadow: 0 0 20px rgba(255, 68, 68, 0.3);
+        }
+        
+        /* UI Overlay base */
+        .ui-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 1000;
+            font-family: inherit;
+        }
+        
+        /* Ensure UI panels are interactive */
+        .ui-panel, .modal-overlay, .panel-toggles {
+            pointer-events: auto;
+        }
+    </style>
+</head>
+<body>
+    <!-- Main game container where Phaser.js will inject the canvas -->
+    <div id="game-container">
+        <div class="loading">Loading Memex Racing</div>
+    </div>
+    
+    <!-- Fallback for no JavaScript -->
+    <noscript>
+        <div class="error-message">
+            <h2>JavaScript Required</h2>
+            <p>Memex Racing requires JavaScript to run. Please enable JavaScript in your browser and reload the page.</p>
+        </div>
+    </noscript>
+    
+    <!-- Webpack will inject script tags here -->
+</body>
+</html>

@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preset Manager Demo - Memex Racing</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #000;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .demo-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .demo-header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #00ff00;
+            padding-bottom: 20px;
+        }
+        
+        .demo-title {
+            font-size: 24px;
+            color: #00ff00;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+            margin-bottom: 10px;
+        }
+        
+        .demo-description {
+            font-size: 14px;
+            color: #888;
+            line-height: 1.5;
+        }
+        
+        .demo-controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .demo-btn {
+            background: rgba(0, 255, 0, 0.2);
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 12px;
+            transition: all 0.2s ease;
+        }
+        
+        .demo-btn:hover {
+            background: rgba(0, 255, 0, 0.3);
+            transform: translateY(-1px);
+        }
+        
+        .demo-info {
+            background: rgba(0, 255, 0, 0.05);
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .info-title {
+            font-weight: bold;
+            color: #00ff00;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        .info-list {
+            list-style: none;
+            padding-left: 20px;
+        }
+        
+        .info-list li {
+            margin: 4px 0;
+            font-size: 12px;
+            color: #ccc;
+        }
+        
+        .info-list li:before {
+            content: "→ ";
+            color: #00ff00;
+            font-weight: bold;
+        }
+        
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 600px;
+            background: radial-gradient(circle, #111 0%, #000 100%);
+            border: 2px solid #00ff00;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .loading-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #00ff00;
+            font-size: 16px;
+            text-align: center;
+        }
+        
+        /* Include the preset manager styles */
+        .ui-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+            font-family: inherit;
+        }
+        
+        .ui-panel, .modal-overlay {
+            pointer-events: auto;
+        }
+    </style>
+    <!-- Include the main UI CSS -->
+    <link rel="stylesheet" href="../styles/game-ui.css">
+</head>
+<body>
+    <div class="demo-container">
+        <div class="demo-header">
+            <h1 class="demo-title">🏁 PRESET MANAGER DEMO</h1>
+            <p class="demo-description">
+                Interactive demonstration of the Memex Racing preset management system.
+                Test configuration presets, import/export functionality, and category management.
+            </p>
+        </div>
+        
+        <div class="demo-controls">
+            <button class="demo-btn" id="show-preset-manager">Show Preset Manager</button>
+            <button class="demo-btn" id="hide-preset-manager">Hide Preset Manager</button>
+            <button class="demo-btn" id="switch-category">Switch Category</button>
+            <button class="demo-btn" id="create-test-preset">Create Test Preset</button>
+            <button class="demo-btn" id="simulate-config-manager">Simulate ConfigManager</button>
+        </div>
+        
+        <div class="demo-info">
+            <div class="info-title">🎮 Features Demonstrated:</div>
+            <ul class="info-list">
+                <li>Preset categories (Game Mode, Visual Theme, Difficulty, Track Setup, Player Config, Complete)</li>
+                <li>Create, edit, and delete presets with real-time preview</li>
+                <li>Import/export presets as JSON files</li>
+                <li>Configuration validation and integration with ConfigManager</li>
+                <li>Responsive design and keyboard shortcuts (R key to toggle)</li>
+                <li>Modal creation dialog with form validation</li>
+                <li>Live preset preview with configuration summaries</li>
+            </ul>
+        </div>
+        
+        <div class="demo-info">
+            <div class="info-title">⌨️ Keyboard Shortcuts:</div>
+            <ul class="info-list">
+                <li><strong>R</strong> - Toggle Preset Manager</li>
+                <li><strong>Escape</strong> - Close modals and panels</li>
+                <li><strong>Tab/Shift+Tab</strong> - Navigate form controls</li>
+                <li><strong>Enter</strong> - Confirm actions in modals</li>
+            </ul>
+        </div>
+        
+        <div id="game-container">
+            <div class="loading-text">
+                <div>🚀 Preset Manager Ready</div>
+                <div style="font-size: 12px; margin-top: 10px; color: #888;">
+                    Click "Show Preset Manager" or press 'R' to open
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Mock ConfigManager for demonstration
+        class MockConfigManager {
+            constructor() {
+                this.configs = new Map();
+                this.initializeMockConfigs();
+            }
+            
+            initializeMockConfigs() {
+                this.configs.set('game-settings', {
+                    game: { maxPlayers: 6, raceTimeLimit: 300, startDelay: 5 },
+                    movement: { baseSpeed: 100, maxSpeed: 300, acceleration: 150 },
+                    physics: { gravity: 0, friction: 0.8, bounce: 0.2 }
+                });
+                
+                this.configs.set('visual-settings', {
+                    theme: 'terminal-green',
+                    pixelArt: true,
+                    particles: true,
+                    screenShake: true
+                });
+                
+                this.configs.set('player-preferences', {
+                    defaultName: 'Player',
+                    autoJoin: false,
+                    soundVolume: 0.8,
+                    musicVolume: 0.6
+                });
+            }
+            
+            getConfiguration(configType) {
+                return this.configs.get(configType) || {};
+            }
+            
+            async updateConfiguration(configType, updates, options = {}) {
+                const existing = this.configs.get(configType) || {};
+                const merged = options.merge ? { ...existing, ...updates } : updates;
+                this.configs.set(configType, merged);
+                return merged;
+            }
+        }
+        
+        // Mock UIManager
+        class MockUIManager {
+            constructor() {
+                this.game = {
+                    configManager: new MockConfigManager()
+                };
+            }
+        }
+        
+        // Import and initialize PresetManager
+        import('../components/PresetManager.js').then(({ PresetManager }) => {
+            const uiManager = new MockUIManager();
+            window.presetManager = new PresetManager(uiManager);
+            
+            window.presetManager.initialize().then(() => {
+                console.log('Preset Manager initialized successfully');
+                
+                // Setup demo controls
+                setupDemoControls();
+                setupKeyboardControls();
+                updateLoadingText('Demo Ready! Press R or use the buttons above.');
+            }).catch(error => {
+                console.error('Failed to initialize Preset Manager:', error);
+                updateLoadingText('Failed to initialize demo. Check console for errors.');
+            });
+        }).catch(error => {
+            console.error('Failed to load PresetManager:', error);
+            updateLoadingText('Failed to load PresetManager module. Check console for errors.');
+        });
+        
+        function setupDemoControls() {
+            const showBtn = document.getElementById('show-preset-manager');
+            const hideBtn = document.getElementById('hide-preset-manager');
+            const switchBtn = document.getElementById('switch-category');
+            const createBtn = document.getElementById('create-test-preset');
+            const configBtn = document.getElementById('simulate-config-manager');
+            
+            showBtn.addEventListener('click', () => {
+                if (window.presetManager) {
+                    window.presetManager.show();
+                    updateLoadingText('Preset Manager is now visible');
+                }
+            });
+            
+            hideBtn.addEventListener('click', () => {
+                if (window.presetManager) {
+                    window.presetManager.hide();
+                    updateLoadingText('Preset Manager is now hidden');
+                }
+            });
+            
+            switchBtn.addEventListener('click', () => {
+                if (window.presetManager) {
+                    // Cycle through categories
+                    const categories = Object.keys(window.presetManager.presetCategories);
+                    const currentIndex = categories.indexOf(window.presetManager.currentCategory);
+                    const nextIndex = (currentIndex + 1) % categories.length;
+                    const nextCategory = categories[nextIndex];
+                    
+                    window.presetManager.switchCategory(nextCategory);
+                    updateLoadingText(`Switched to ${window.presetManager.presetCategories[nextCategory].name} category`);
+                }
+            });
+            
+            createBtn.addEventListener('click', () => {
+                if (window.presetManager) {
+                    window.presetManager.showCreatePresetModal();
+                    updateLoadingText('Create preset modal opened');
+                }
+            });
+            
+            configBtn.addEventListener('click', () => {
+                // Add some test configurations
+                const mockConfig = window.presetManager?.uiManager?.game?.configManager;
+                if (mockConfig) {
+                    mockConfig.configs.set('test-setting', {
+                        testValue: Math.random() * 100,
+                        timestamp: Date.now()
+                    });
+                    updateLoadingText('Added test configuration to mock ConfigManager');
+                }
+            });
+        }
+        
+        function setupKeyboardControls() {
+            document.addEventListener('keydown', (event) => {
+                if (event.code === 'KeyR' && !isInputFocused()) {
+                    event.preventDefault();
+                    if (window.presetManager) {
+                        window.presetManager.toggle();
+                        const isVisible = window.presetManager.isVisible;
+                        updateLoadingText(`Preset Manager ${isVisible ? 'shown' : 'hidden'} via keyboard`);
+                    }
+                }
+                
+                if (event.code === 'Escape') {
+                    if (window.presetManager) {
+                        window.presetManager.hide();
+                        updateLoadingText('Preset Manager closed via Escape key');
+                    }
+                }
+            });
+        }
+        
+        function isInputFocused() {
+            const activeElement = document.activeElement;
+            return activeElement && (
+                activeElement.tagName === 'INPUT' ||
+                activeElement.tagName === 'TEXTAREA' ||
+                activeElement.contentEditable === 'true'
+            );
+        }
+        
+        function updateLoadingText(message) {
+            const loadingText = document.querySelector('.loading-text');
+            if (loadingText) {
+                loadingText.innerHTML = `
+                    <div>🚀 ${message}</div>
+                    <div style="font-size: 12px; margin-top: 10px; color: #888;">
+                        Press 'R' to toggle • ESC to close • Use buttons above for testing
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

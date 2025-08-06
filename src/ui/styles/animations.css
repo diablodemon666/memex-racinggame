@@ -1,0 +1,679 @@
+/**
+ * animations.css - Enhanced CSS Animations for Memex Racing
+ * 
+ * Provides CSS-based animations for UI elements including:
+ * - Panel transitions
+ * - Loading animations
+ * - Countdown effects
+ * - Winner celebrations
+ * - Retro gaming effects
+ */
+
+/* ===== KEYFRAME DEFINITIONS ===== */
+
+/* Panel Slide Animations */
+@keyframes slideInLeft {
+    from {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideInTop {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideInBottom {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Fade Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}
+
+/* Scale Animations */
+@keyframes zoomIn {
+    from {
+        transform: scale(0);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes zoomOut {
+    from {
+        transform: scale(1);
+        opacity: 1;
+    }
+    to {
+        transform: scale(0);
+        opacity: 0;
+    }
+}
+
+@keyframes bounceIn {
+    0% {
+        transform: scale(0.3);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    70% {
+        transform: scale(0.9);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Attention Animations */
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+@keyframes shake {
+    0%, 100% {
+        transform: translateX(0);
+    }
+    10%, 30%, 50%, 70%, 90% {
+        transform: translateX(-10px);
+    }
+    20%, 40%, 60%, 80% {
+        transform: translateX(10px);
+    }
+}
+
+@keyframes rubberBand {
+    0% {
+        transform: scale(1);
+    }
+    30% {
+        transform: scale(1.25, 0.75);
+    }
+    40% {
+        transform: scale(0.75, 1.25);
+    }
+    50% {
+        transform: scale(1.15, 0.85);
+    }
+    65% {
+        transform: scale(0.95, 1.05);
+    }
+    75% {
+        transform: scale(1.05, 0.95);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+@keyframes flash {
+    0%, 50%, 100% {
+        opacity: 1;
+    }
+    25%, 75% {
+        opacity: 0;
+    }
+}
+
+/* Rotation Animations */
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes spinReverse {
+    from {
+        transform: rotate(360deg);
+    }
+    to {
+        transform: rotate(0deg);
+    }
+}
+
+/* Glow Effect */
+@keyframes glow {
+    0%, 100% {
+        box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+    }
+    50% {
+        box-shadow: 0 0 30px rgba(0, 255, 0, 0.8),
+                    0 0 50px rgba(0, 255, 0, 0.6),
+                    0 0 70px rgba(0, 255, 0, 0.4);
+    }
+}
+
+@keyframes textGlow {
+    0%, 100% {
+        text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+    }
+    50% {
+        text-shadow: 0 0 20px rgba(0, 255, 0, 1),
+                     0 0 30px rgba(0, 255, 0, 0.8),
+                     0 0 40px rgba(0, 255, 0, 0.6);
+    }
+}
+
+/* Loading Animations */
+@keyframes loading {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes loadingDots {
+    0%, 80%, 100% {
+        opacity: 0;
+    }
+    40% {
+        opacity: 1;
+    }
+}
+
+@keyframes progressBar {
+    from {
+        width: 0%;
+    }
+    to {
+        width: 100%;
+    }
+}
+
+/* Countdown Animations */
+@keyframes countdownPulse {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.5);
+        opacity: 0.7;
+    }
+    100% {
+        transform: scale(2);
+        opacity: 0;
+    }
+}
+
+@keyframes countdownBounce {
+    0% {
+        transform: scale(0) rotate(0deg);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.2) rotate(180deg);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1) rotate(360deg);
+        opacity: 1;
+    }
+}
+
+/* Winner Celebration Animations */
+@keyframes celebrate {
+    0%, 100% {
+        transform: scale(1) rotate(0deg);
+    }
+    25% {
+        transform: scale(1.1) rotate(5deg);
+    }
+    50% {
+        transform: scale(1.2) rotate(-5deg);
+    }
+    75% {
+        transform: scale(1.1) rotate(5deg);
+    }
+}
+
+@keyframes confetti {
+    0% {
+        transform: translateY(-100vh) rotate(0deg);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(100vh) rotate(720deg);
+        opacity: 0;
+    }
+}
+
+@keyframes trophy {
+    0% {
+        transform: scale(0) rotate(0deg);
+    }
+    50% {
+        transform: scale(1.2) rotate(360deg);
+    }
+    100% {
+        transform: scale(1) rotate(720deg);
+    }
+}
+
+/* Retro Gaming Effects */
+@keyframes scanlines {
+    0% {
+        background-position: 0 0;
+    }
+    100% {
+        background-position: 0 10px;
+    }
+}
+
+@keyframes glitch {
+    0%, 100% {
+        transform: translateX(0);
+        filter: hue-rotate(0deg);
+    }
+    20% {
+        transform: translateX(-2px);
+        filter: hue-rotate(90deg);
+    }
+    40% {
+        transform: translateX(2px);
+        filter: hue-rotate(180deg);
+    }
+    60% {
+        transform: translateX(-2px);
+        filter: hue-rotate(270deg);
+    }
+    80% {
+        transform: translateX(2px);
+        filter: hue-rotate(360deg);
+    }
+}
+
+@keyframes pixelate {
+    0%, 100% {
+        filter: blur(0);
+    }
+    50% {
+        filter: blur(1px);
+    }
+}
+
+@keyframes typewriter {
+    from {
+        width: 0;
+    }
+    to {
+        width: 100%;
+    }
+}
+
+@keyframes blink {
+    0%, 49% {
+        opacity: 1;
+    }
+    50%, 100% {
+        opacity: 0;
+    }
+}
+
+/* Matrix Rain Effect */
+@keyframes matrixRain {
+    0% {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    10% {
+        opacity: 1;
+    }
+    90% {
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(100vh);
+        opacity: 0;
+    }
+}
+
+/* ===== ANIMATION CLASSES ===== */
+
+/* Entrance Animations */
+.animate-fadeIn {
+    animation: fadeIn 0.3s ease-out forwards;
+}
+
+.animate-slideInLeft {
+    animation: slideInLeft 0.4s ease-out forwards;
+}
+
+.animate-slideInRight {
+    animation: slideInRight 0.4s ease-out forwards;
+}
+
+.animate-slideInTop {
+    animation: slideInTop 0.4s ease-out forwards;
+}
+
+.animate-slideInBottom {
+    animation: slideInBottom 0.4s ease-out forwards;
+}
+
+.animate-zoomIn {
+    animation: zoomIn 0.35s ease-out forwards;
+}
+
+.animate-bounceIn {
+    animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+/* Exit Animations */
+.animate-fadeOut {
+    animation: fadeOut 0.3s ease-in forwards;
+}
+
+.animate-zoomOut {
+    animation: zoomOut 0.35s ease-in forwards;
+}
+
+/* Attention Animations */
+.animate-pulse {
+    animation: pulse 1s ease-in-out infinite;
+}
+
+.animate-shake {
+    animation: shake 0.5s ease-in-out;
+}
+
+.animate-rubberBand {
+    animation: rubberBand 1s ease-in-out;
+}
+
+.animate-flash {
+    animation: flash 0.5s ease-in-out;
+}
+
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
+
+.animate-glow {
+    animation: glow 2s ease-in-out infinite;
+}
+
+.animate-textGlow {
+    animation: textGlow 2s ease-in-out infinite;
+}
+
+/* Loading States */
+.loading-spinner {
+    animation: loading 1s linear infinite;
+}
+
+.loading-dots span {
+    animation: loadingDots 1.4s infinite ease-in-out both;
+}
+
+.loading-dots span:nth-child(1) {
+    animation-delay: -0.32s;
+}
+
+.loading-dots span:nth-child(2) {
+    animation-delay: -0.16s;
+}
+
+.progress-bar {
+    animation: progressBar 2s ease-out forwards;
+}
+
+/* Countdown Effects */
+.countdown-number {
+    animation: countdownBounce 1s ease-out;
+}
+
+.countdown-pulse {
+    animation: countdownPulse 1s ease-out;
+}
+
+/* Winner Effects */
+.winner-celebration {
+    animation: celebrate 2s ease-in-out infinite;
+}
+
+.winner-trophy {
+    animation: trophy 1s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.confetti-piece {
+    animation: confetti 3s linear forwards;
+}
+
+/* Retro Effects */
+.retro-scanlines {
+    position: relative;
+}
+
+.retro-scanlines::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 255, 0, 0.03) 2px,
+        rgba(0, 255, 0, 0.03) 4px
+    );
+    animation: scanlines 8s linear infinite;
+    pointer-events: none;
+}
+
+.retro-glitch {
+    animation: glitch 2s steps(20) infinite;
+}
+
+.retro-pixelate {
+    animation: pixelate 0.5s steps(5) infinite;
+}
+
+.typewriter-text {
+    overflow: hidden;
+    border-right: 2px solid #00ff00;
+    white-space: nowrap;
+    animation: typewriter 3s steps(40) 1s 1 normal both,
+               blink 1s steps(2) infinite;
+}
+
+/* ===== ANIMATION UTILITIES ===== */
+
+/* Animation Delays */
+.delay-100 { animation-delay: 100ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-300 { animation-delay: 300ms; }
+.delay-400 { animation-delay: 400ms; }
+.delay-500 { animation-delay: 500ms; }
+.delay-1000 { animation-delay: 1000ms; }
+
+/* Animation Durations */
+.duration-fast { animation-duration: 200ms; }
+.duration-normal { animation-duration: 300ms; }
+.duration-slow { animation-duration: 500ms; }
+.duration-slower { animation-duration: 1000ms; }
+.duration-slowest { animation-duration: 2000ms; }
+
+/* Animation Fill Modes */
+.fill-forwards { animation-fill-mode: forwards; }
+.fill-backwards { animation-fill-mode: backwards; }
+.fill-both { animation-fill-mode: both; }
+
+/* Animation Iteration */
+.animate-once { animation-iteration-count: 1; }
+.animate-twice { animation-iteration-count: 2; }
+.animate-infinite { animation-iteration-count: infinite; }
+
+/* ===== TRANSITION CLASSES ===== */
+
+.transition-all {
+    transition: all 0.3s ease;
+}
+
+.transition-opacity {
+    transition: opacity 0.3s ease;
+}
+
+.transition-transform {
+    transition: transform 0.3s ease;
+}
+
+.transition-colors {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+.transition-shadow {
+    transition: box-shadow 0.3s ease;
+}
+
+/* Hover Effects */
+.hover-grow:hover {
+    transform: scale(1.05);
+}
+
+.hover-shrink:hover {
+    transform: scale(0.95);
+}
+
+.hover-rotate:hover {
+    transform: rotate(5deg);
+}
+
+.hover-glow:hover {
+    box-shadow: 0 0 20px rgba(0, 255, 0, 0.8);
+}
+
+.hover-lift:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+}
+
+/* Active States */
+.active-scale:active {
+    transform: scale(0.95);
+}
+
+.active-darken:active {
+    filter: brightness(0.8);
+}
+
+/* Disabled States */
+.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* ===== SPECIAL EFFECTS ===== */
+
+/* Neon Text Effect */
+.neon-text {
+    text-shadow: 
+        0 0 10px #00ff00,
+        0 0 20px #00ff00,
+        0 0 30px #00ff00,
+        0 0 40px #00ff00;
+}
+
+/* CRT Monitor Effect */
+.crt-effect {
+    position: relative;
+    overflow: hidden;
+}
+
+.crt-effect::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        rgba(18, 16, 16, 0) 50%,
+        rgba(0, 0, 0, 0.25) 50%
+    );
+    background-size: 100% 2px;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.crt-effect::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 255, 0, 0.02);
+    pointer-events: none;
+    z-index: 2;
+}
+
+/* Pixelated Images */
+.pixelated {
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+}

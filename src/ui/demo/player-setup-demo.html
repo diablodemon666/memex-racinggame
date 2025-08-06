@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Player Setup Panel Demo - Memex Racing</title>
+    <link rel="stylesheet" href="../styles/game-ui.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(45deg, #0a0a2a, #1a1a3a);
+            min-height: 100vh;
+            font-family: 'Courier New', monospace;
+            overflow-x: hidden;
+        }
+        
+        .demo-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(0, 255, 0, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 50%, rgba(0, 150, 255, 0.1) 0%, transparent 50%),
+                linear-gradient(45deg, #0a0a2a, #1a1a3a);
+        }
+        
+        .demo-title {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #00ff00;
+            font-size: 24px;
+            font-weight: bold;
+            text-transform: uppercase;
+            text-align: center;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+        
+        .demo-info {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 360px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #00ff00;
+            border-radius: 4px;
+            padding: 15px;
+            color: #00ff00;
+            font-size: 12px;
+        }
+        
+        .demo-info h3 {
+            margin: 0 0 10px 0;
+            color: #ffff00;
+            font-size: 14px;
+        }
+        
+        .demo-info ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        
+        .demo-info li {
+            margin: 5px 0;
+        }
+        
+        .mock-game-area {
+            position: absolute;
+            left: 20px;
+            top: 80px;
+            bottom: 200px;
+            right: 360px;
+            background: 
+                repeating-linear-gradient(
+                    45deg,
+                    rgba(0, 255, 0, 0.05),
+                    rgba(0, 255, 0, 0.05) 10px,
+                    transparent 10px,
+                    transparent 20px
+                );
+            border: 1px dashed rgba(0, 255, 0, 0.2);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(0, 255, 0, 0.3);
+            font-size: 18px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .controls-panel {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 250px;
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid #0066ff;
+            border-radius: 4px;
+            padding: 10px;
+        }
+        
+        .controls-panel h4 {
+            margin: 0 0 10px 0;
+            color: #0088ff;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+        
+        .control-btn {
+            display: block;
+            width: 100%;
+            margin: 5px 0;
+            padding: 8px;
+            background: #0066ff;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+        
+        .control-btn:hover {
+            background: #0088ff;
+        }
+        
+        .status-display {
+            margin-top: 10px;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            border-radius: 3px;
+            font-size: 10px;
+            color: #00ff00;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <h1 class="demo-title">Player Setup Panel Demo</h1>
+        
+        <div class="mock-game-area">
+            Game Canvas Area<br>
+            <small style="font-size: 14px; opacity: 0.7;">(Racing game would render here)</small>
+        </div>
+        
+        <div class="ui-overlay">
+            <!-- Player Setup Panel will be created here -->
+            <div id="player-setup-panel" class="ui-panel player-setup"></div>
+        </div>
+        
+        <div class="demo-info">
+            <h3>PlayerSetupPanel Features:</h3>
+            <ul>
+                <li><strong>Player Assignment:</strong> Shows current player (P1-P6) with color</li>
+                <li><strong>Name Input:</strong> Real-time player name customization (12 char limit)</li>
+                <li><strong>Image Upload:</strong> Drag & drop or click to upload player avatar</li>
+                <li><strong>Auto Resize:</strong> Images automatically resized to 128x128 pixels</li>
+                <li><strong>Race Joining:</strong> One-click join with mandatory bet placement</li>
+                <li><strong>Live Updates:</strong> Changes apply instantly to game character</li>
+                <li><strong>Keyboard Shortcuts:</strong> U (unstick), D (debug), M (maps)</li>
+                <li><strong>Map Information:</strong> Current track and rotation countdown</li>
+            </ul>
+        </div>
+        
+        <div class="controls-panel">
+            <h4>Demo Controls</h4>
+            <button class="control-btn" onclick="switchPlayer()">Switch Player (P1-P6)</button>
+            <button class="control-btn" onclick="simulateMapChange()">Change Map</button>
+            <button class="control-btn" onclick="simulateRaceEnd()">End Race / Reset</button>
+            <button class="control-btn" onclick="togglePanel()">Toggle Panel</button>
+            <button class="control-btn" onclick="showState()">Show Current State</button>
+            
+            <div class="status-display" id="status-display">
+                Current Player: P4 (YELLOW)<br>
+                Map: Classic Maze<br>
+                Status: Ready to join
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Mock UIManager for demo
+        class MockUIManager {
+            constructor() {
+                this.game = {
+                    events: {
+                        emit: (event, data) => {
+                            console.log('[MockGame] Event:', event, data);
+                            this.updateStatus(`Game Event: ${event}`);
+                        }
+                    }
+                };
+                this.leaderboardPanel = {
+                    updatePlayerList: (players) => {
+                        console.log('[MockLeaderboard] Players updated:', players);
+                    }
+                };
+            }
+            
+            updateStatus(message) {
+                const status = document.getElementById('status-display');
+                if (status) {
+                    const lines = status.innerHTML.split('<br>');
+                    lines[2] = `Status: ${message}`;
+                    status.innerHTML = lines.join('<br>');
+                }
+            }
+        }
+
+        // Import and initialize PlayerSetupPanel
+        import { PlayerSetupPanel } from '../components/PlayerSetupPanel.js';
+        
+        const mockUIManager = new MockUIManager();
+        const playerSetupPanel = new PlayerSetupPanel(mockUIManager);
+        
+        // Initialize the panel
+        await playerSetupPanel.initialize();
+        
+        // Demo control functions
+        window.switchPlayer = () => {
+            const currentIndex = playerSetupPanel.currentPlayerIndex;
+            const nextIndex = (currentIndex + 1) % 6;
+            playerSetupPanel.setCurrentPlayer(nextIndex);
+            
+            const colors = ['RED', 'GREEN', 'BLUE', 'YELLOW', 'MAGENTA', 'CYAN'];
+            const status = document.getElementById('status-display');
+            const lines = status.innerHTML.split('<br>');
+            lines[0] = `Current Player: P${nextIndex + 1} (${colors[nextIndex]})`;
+            status.innerHTML = lines.join('<br>');
+            
+            mockUIManager.updateStatus(`Switched to P${nextIndex + 1}`);
+        };
+        
+        window.simulateMapChange = () => {
+            const maps = [
+                { name: 'Classic Maze', races: 3 },
+                { name: 'Speed Circuit', races: 2 },
+                { name: 'Serpentine Path', races: 1 },
+                { name: 'Grid Lock', races: 3 },
+                { name: 'Spiral Madness', races: 2 },
+                { name: 'Island Hopper', races: 1 }
+            ];
+            
+            const randomMap = maps[Math.floor(Math.random() * maps.length)];
+            playerSetupPanel.updateMapInfo(randomMap.name, randomMap.races);
+            
+            const status = document.getElementById('status-display');
+            const lines = status.innerHTML.split('<br>');
+            lines[1] = `Map: ${randomMap.name}`;
+            status.innerHTML = lines.join('<br>');
+            
+            mockUIManager.updateStatus(`Map changed to ${randomMap.name}`);
+        };
+        
+        window.simulateRaceEnd = () => {
+            playerSetupPanel.resetForNewRace();
+            mockUIManager.updateStatus('Race ended - ready for new race');
+        };
+        
+        window.togglePanel = () => {
+            playerSetupPanel.toggle();
+            mockUIManager.updateStatus('Panel toggled');
+        };
+        
+        window.showState = () => {
+            const state = playerSetupPanel.getPlayerSetupState();
+            console.log('[Demo] Current state:', state);
+            alert(`Player Setup State:\n\nPlayer: P${state.currentPlayerIndex + 1}\nName: ${state.playerName}\nCustom Image: ${state.hasCustomImage ? 'Yes' : 'No'}\nJoined: ${state.isJoined ? 'Yes' : 'No'}\nBet Amount: ${state.mandatoryBetAmount} coins`);
+        };
+        
+        // Show initial state
+        console.log('[Demo] PlayerSetupPanel demo initialized');
+        console.log('[Demo] Available methods:', {
+            switchPlayer: 'Switch between P1-P6',
+            simulateMapChange: 'Change current map',
+            simulateRaceEnd: 'Reset for new race',
+            togglePanel: 'Show/hide panel',
+            showState: 'Display current state'
+        });
+        
+        // Add keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            switch(e.code) {
+                case 'KeyP':
+                    if (!e.target.matches('input')) {
+                        e.preventDefault();
+                        togglePanel();
+                    }
+                    break;
+                case 'Digit1':
+                case 'Digit2':
+                case 'Digit3':
+                case 'Digit4':
+                case 'Digit5':
+                case 'Digit6':
+                    if (!e.target.matches('input')) {
+                        e.preventDefault();
+                        const playerIndex = parseInt(e.code.slice(-1)) - 1;
+                        playerSetupPanel.setCurrentPlayer(playerIndex);
+                        const colors = ['RED', 'GREEN', 'BLUE', 'YELLOW', 'MAGENTA', 'CYAN'];
+                        const status = document.getElementById('status-display');
+                        const lines = status.innerHTML.split('<br>');
+                        lines[0] = `Current Player: P${playerIndex + 1} (${colors[playerIndex]})`;
+                        status.innerHTML = lines.join('<br>');
+                        mockUIManager.updateStatus(`Switched to P${playerIndex + 1}`);
+                    }
+                    break;
+            }
+        });
+        
+        // Update status initially
+        mockUIManager.updateStatus('Demo ready - try uploading an image!');
+    </script>
+</body>
+</html>

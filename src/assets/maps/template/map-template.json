@@ -1,0 +1,50 @@
+{
+  "name": "Map Name",
+  "difficulty": "medium",
+  "author": "Author Name",
+  "description": "Brief description of your map's unique features and challenges",
+  "dimensions": {
+    "width": 4000,
+    "height": 2000
+  },
+  "tileSize": 32,
+  "colors": {
+    "track": "#000000",
+    "wall": "#FFFFFF",
+    "decorative": "#808080"
+  },
+  "spawning": {
+    "note": "Players and M token spawn randomly. No fixed positions needed.",
+    "maxPlayers": 6
+  },
+  "boosters": {
+    "enabled": true,
+    "spawnRate": 5000,
+    "maxActive": 8,
+    "types": ["antenna", "twitter", "memex_tag", "poo", "toilet_paper", "toilet", "banana", "king_kong"],
+    "note": "Boosters spawn randomly on track areas at random intervals"
+  },
+  "features": [
+    "multiple_paths",
+    "narrow_passages",
+    "open_areas",
+    "strategic_shortcuts"
+  ],
+  "metadata": {
+    "version": "1.0",
+    "createdDate": "2025-08-01",
+    "lastModified": "2025-08-01",
+    "testedWith": {
+      "minPlayers": 2,
+      "maxPlayers": 6,
+      "averageRaceTime": 180
+    }
+  },
+  "performance": {
+    "recommendedSettings": {
+      "particleEffects": "medium",
+      "shadowQuality": "low"
+    },
+    "warnings": []
+  }
+}

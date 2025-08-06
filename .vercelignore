@@ -1,0 +1,35 @@
+# Ignore unnecessary files for deployment
+node_modules
+.git
+.gitignore
+*.log
+*.md
+.DS_Store
+.env
+.env.local
+tests
+coverage
+.vscode
+.idea
+*.map
+claudeweb
+scripts
+docs
+README-*
+DEPLOYMENT-*
+CLAUDE.md
+changelog.md
+todo.md
+*.bat
+*.sh
+webpack.config.js
+webpack.serverless.js
+jest.config.js
+.eslintrc
+.prettierrc
+
+# Source files (already built)
+src/
+
+# Only keep necessary dist files
+!dist/

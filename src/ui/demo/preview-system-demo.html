@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preview System Demo - Memex Racing</title>
+    <link rel="stylesheet" href="../styles/game-ui.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #000;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .demo-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .demo-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 2px solid #00ff00;
+            border-radius: 4px;
+            background: rgba(0, 255, 0, 0.05);
+        }
+        
+        .demo-controls {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 20px;
+            padding: 16px;
+            background: rgba(0, 255, 0, 0.05);
+            border: 1px solid rgba(0, 255, 0, 0.2);
+            border-radius: 4px;
+        }
+        
+        .demo-btn {
+            background: rgba(0, 255, 0, 0.1);
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            padding: 8px 16px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            font-weight: bold;
+            border-radius: 2px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .demo-btn:hover {
+            background: rgba(0, 255, 0, 0.2);
+            box-shadow: 0 0 5px rgba(0, 255, 0, 0.3);
+        }
+        
+        .demo-btn:active {
+            background: rgba(0, 255, 0, 0.3);
+        }
+        
+        .ui-overlay {
+            position: relative;
+            width: 100%;
+            height: 700px;
+            background: #111;
+            border: 2px solid #00ff00;
+            border-radius: 4px;
+        }
+        
+        /* Override positioning for demo */
+        .ui-panel.preview-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 850px;
+            max-width: calc(100% - 40px);
+            max-height: calc(100% - 40px);
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <div class="demo-header">
+            <h1>PREVIEW SYSTEM DEMO</h1>
+            <p>Real-time preview capabilities for Memex Racing game assets and configurations</p>
+            <p><strong>Features:</strong> Split-screen preview, before/after comparison, live updates, animation controls</p>
+        </div>
+        
+        <div class="demo-controls">
+            <button class="demo-btn" onclick="showPreview()">SHOW PREVIEW</button>
+            <button class="demo-btn" onclick="hidePreview()">HIDE PREVIEW</button>
+            <button class="demo-btn" onclick="simulateAssetUpdate()">SIMULATE ASSET UPDATE</button>
+            <button class="demo-btn" onclick="simulateConfigUpdate()">SIMULATE CONFIG UPDATE</button>
+            <button class="demo-btn" onclick="simulateGameStateUpdate()">SIMULATE GAME STATE</button>
+            <button class="demo-btn" onclick="resetPreview()">RESET PREVIEW</button>
+        </div>
+        
+        <div class="ui-overlay" id="demo-ui-overlay">
+            <div id="preview-panel" class="ui-panel preview-panel hidden">
+                <!-- PreviewSystem will populate this -->
+            </div>
+        </div>
+    </div>
+    
+    <script type="module">
+        // Import PreviewSystem
+        import { PreviewSystem } from '../components/PreviewSystem.js';
+        
+        // Create mock UI Manager
+        const mockUIManager = {
+            scene: {
+                assetManager: null,
+                configManager: null,
+                gameEngine: null
+            }
+        };
+        
+        // Initialize PreviewSystem
+        const previewSystem = new PreviewSystem(mockUIManager);
+        window.previewSystem = previewSystem;
+        
+        // Initialize the system
+        previewSystem.initialize().then(() => {
+            console.log('Preview System Demo Ready');
+        });
+        
+        // Demo functions
+        window.showPreview = () => {
+            previewSystem.show();
+        };
+        
+        window.hidePreview = () => {
+            previewSystem.hide();
+        };
+        
+        window.simulateAssetUpdate = () => {
+            const mockAsset = {
+                key: 'demo-sprite',
+                type: 'image',
+                width: 64,
+                height: 64,
+                url: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
+            };
+            previewSystem.handleAssetUpdate('loaded', mockAsset);
+        };
+        
+        window.simulateConfigUpdate = () => {
+            const mockConfig = {
+                type: 'game-settings',
+                state: 'validated',
+                data: {
+                    playerSpeed: 100,
+                    raceTimer: 300,
+                    maxPlayers: 6
+                },
+                metadata: {
+                    lastModified: Date.now(),
+                    version: '1.0.0'
+                }
+            };
+            previewSystem.handleConfigUpdate('updated', mockConfig);
+        };
+        
+        window.simulateGameStateUpdate = () => {
+            const mockGameState = {
+                phase: 'racing',
+                players: [
+                    { id: '1', name: 'Player 1' },
+                    { id: '2', name: 'Player 2' },
+                    { id: '3', name: 'Player 3' }
+                ],
+                timeRemaining: 240,
+                status: 'active'
+            };
+            previewSystem.handleGameStateUpdate(mockGameState);
+        };
+        
+        window.resetPreview = () => {
+            previewSystem.resetPreview();
+        };
+        
+        // Show some demo info
+        setTimeout(() => {
+            previewSystem.addChangeLogEntry('Demo initialized');
+            previewSystem.addChangeLogEntry('Click buttons above to test functionality');
+            previewSystem.addChangeLogEntry('Use V key to toggle preview panel');
+        }, 1000);
+        
+        // Simulate periodic updates when playing
+        setInterval(() => {
+            if (previewSystem.isPlaying && previewSystem.isVisible) {
+                const updates = [
+                    () => window.simulateAssetUpdate(),
+                    () => window.simulateConfigUpdate(),
+                    () => window.simulateGameStateUpdate()
+                ];
+                const randomUpdate = updates[Math.floor(Math.random() * updates.length)];
+                randomUpdate();
+            }
+        }, 5000);
+    </script>
+</body>
+</html>
