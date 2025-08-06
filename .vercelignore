@@ -22,14 +22,14 @@ changelog.md
 todo.md
 *.bat
 *.sh
-webpack.config.js
 webpack.serverless.js
 jest.config.js
 .eslintrc
 .prettierrc
 
-# Source files (already built)
-src/
+# Test and development files
+tests/
+coverage/
 
-# Only keep necessary dist files
-!dist/
+# Only keep necessary dist files after build
+# Note: src/ is needed during build time
