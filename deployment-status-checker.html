@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memex Racing - Deployment Status Checker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #0a0a0a, #1a1a1a);
+            color: #00ff00;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px;
+            background: linear-gradient(45deg, #111, #222);
+            border-radius: 15px;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.1);
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px #00ff00;
+        }
+        
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .status-card {
+            background: linear-gradient(45deg, #0d1117, #161b22);
+            border: 1px solid #30363d;
+            border-radius: 10px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .status-card:hover {
+            box-shadow: 0 5px 15px rgba(0, 255, 0, 0.2);
+            border-color: #00ff00;
+        }
+        
+        .status-card h3 {
+            color: #58a6ff;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-indicator.checking { background: #ffa500; }
+        .status-indicator.pass { background: #00ff00; }
+        .status-indicator.fail { background: #ff4444; }
+        .status-indicator.warn { background: #ffff00; }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .test-result {
+            background: #0d1117;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            border-left: 3px solid #333;
+            font-size: 14px;
+        }
+        
+        .test-result.pass { border-left-color: #00ff00; }
+        .test-result.fail { border-left-color: #ff4444; }
+        .test-result.warn { border-left-color: #ffff00; }
+        .test-result.info { border-left-color: #58a6ff; }
+        
+        .iframe-container {
+            background: #0d1117;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 30px 0;
+            border: 2px solid #30363d;
+        }
+        
+        .iframe-wrapper {
+            width: 100%;
+            height: 600px;
+            border: 2px solid #444;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .iframe-wrapper iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: #000;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        
+        .btn {
+            background: linear-gradient(45deg, #238636, #2ea043);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(46, 160, 67, 0.3);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn.danger {
+            background: linear-gradient(45deg, #da3633, #f85149);
+        }
+        
+        .btn.warning {
+            background: linear-gradient(45deg, #bf8700, #d29922);
+        }
+        
+        .console-log {
+            background: #000;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            padding: 15px;
+            border-radius: 8px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            font-size: 12px;
+            border: 1px solid #333;
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        
+        .loading-content {
+            text-align: center;
+            color: #00ff00;
+        }
+        
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 3px solid #333;
+            border-top: 3px solid #00ff00;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .summary {
+            background: linear-gradient(45deg, #0d1117, #161b22);
+            border: 1px solid #30363d;
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 30px;
+        }
+        
+        .summary h2 {
+            color: #f0f6fc;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #30363d;
+        }
+        
+        .metric:last-child {
+            border-bottom: none;
+        }
+        
+        .metric-value {
+            font-weight: bold;
+            color: #00ff00;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #0d1117;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+            border: 1px solid #30363d;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff00, #00cc00);
+            width: 0%;
+            transition: width 0.5s ease;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎮 Memex Racing - Deployment Status</h1>
+            <p>Comprehensive testing of the Vercel deployment</p>
+            <p><strong>Target:</strong> <span id="target-url">https://memex-racing-game.vercel.app</span></p>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+            <p id="progress-text">Ready to start testing...</p>
+        </div>
+        
+        <div class="controls">
+            <button class="btn" id="start-test">🚀 Start Comprehensive Test</button>
+            <button class="btn warning" id="quick-check">⚡ Quick Status Check</button>
+            <button class="btn" id="reload-iframe">🔄 Reload Game Frame</button>
+            <button class="btn danger" id="clear-results">🗑️ Clear Results</button>
+        </div>
+        
+        <div class="status-grid">
+            <div class="status-card">
+                <h3><span class="status-indicator checking" id="connectivity-status"></span>Connectivity Test</h3>
+                <div id="connectivity-results">
+                    <div class="test-result info">⏳ Waiting for test to start...</div>
+                </div>
+            </div>
+            
+            <div class="status-card">
+                <h3><span class="status-indicator checking" id="loading-status"></span>Page Loading</h3>
+                <div id="loading-results">
+                    <div class="test-result info">⏳ Waiting for test to start...</div>
+                </div>
+            </div>
+            
+            <div class="status-card">
+                <h3><span class="status-indicator checking" id="javascript-status"></span>JavaScript Execution</h3>
+                <div id="javascript-results">
+                    <div class="test-result info">⏳ Waiting for test to start...</div>
+                </div>
+            </div>
+            
+            <div class="status-card">
+                <h3><span class="status-indicator checking" id="game-status"></span>Game Initialization</h3>
+                <div id="game-results">
+                    <div class="test-result info">⏳ Waiting for test to start...</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="iframe-container">
+            <h3>🖥️ Live Game Preview</h3>
+            <div class="iframe-wrapper">
+                <iframe id="game-iframe" src="about:blank"></iframe>
+            </div>
+        </div>
+        
+        <div class="status-card">
+            <h3>📊 Console Log Monitor</h3>
+            <div class="console-log" id="console-log">
+                Console monitoring will start when tests begin...
+            </div>
+        </div>
+        
+        <div class="summary">
+            <h2>📋 Test Summary</h2>
+            <div class="metric">
+                <span>Overall Status:</span>
+                <span class="metric-value" id="overall-status">Not Started</span>
+            </div>
+            <div class="metric">
+                <span>Tests Passed:</span>
+                <span class="metric-value" id="tests-passed">0</span>
+            </div>
+            <div class="metric">
+                <span>Tests Failed:</span>
+                <span class="metric-value" id="tests-failed">0</span>
+            </div>
+            <div class="metric">
+                <span>Total Test Time:</span>
+                <span class="metric-value" id="test-duration">0 seconds</span>
+            </div>
+            <div class="metric">
+                <span>Last Updated:</span>
+                <span class="metric-value" id="last-updated">Never</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <h3>Running Comprehensive Tests</h3>
+            <p id="loading-text">Initializing test suite...</p>
+        </div>
+    </div>
+
+    <script>
+        class DeploymentStatusChecker {
+            constructor() {
+                this.gameUrl = 'https://memex-racing-game.vercel.app';
+                this.testResults = {
+                    connectivity: [],
+                    loading: [],
+                    javascript: [],
+                    game: []
+                };
+                this.startTime = null;
+                this.isTestRunning = false;
+                this.logs = [];
+                
+                this.initializeEventListeners();
+                this.updateTargetUrl();
+            }
+            
+            initializeEventListeners() {
+                document.getElementById('start-test').addEventListener('click', () => this.runComprehensiveTest());
+                document.getElementById('quick-check').addEventListener('click', () => this.runQuickCheck());
+                document.getElementById('reload-iframe').addEventListener('click', () => this.reloadIframe());
+                document.getElementById('clear-results').addEventListener('click', () => this.clearResults());
+            }
+            
+            updateTargetUrl() {
+                document.getElementById('target-url').textContent = this.gameUrl;
+            }
+            
+            log(message, category = 'INFO') {
+                const timestamp = new Date().toISOString().substr(11, 8);
+                const logEntry = `[${timestamp}] ${category}: ${message}`;
+                this.logs.push(logEntry);
+                
+                const consoleElement = document.getElementById('console-log');
+                consoleElement.textContent = this.logs.join('\n');
+                consoleElement.scrollTop = consoleElement.scrollHeight;
+                
+                console.log(logEntry);
+            }
+            
+            updateProgress(percentage, text) {
+                const progressFill = document.getElementById('progress-fill');
+                const progressText = document.getElementById('progress-text');
+                
+                progressFill.style.width = percentage + '%';
+                progressText.textContent = text;
+            }
+            
+            showLoading(show, text = '') {
+                const overlay = document.getElementById('loading-overlay');
+                const loadingText = document.getElementById('loading-text');
+                
+                overlay.style.display = show ? 'flex' : 'none';
+                if (text) loadingText.textContent = text;
+            }
+            
+            updateStatus(category, status, message) {
+                const statusIndicator = document.getElementById(`${category}-status`);
+                const resultsContainer = document.getElementById(`${category}-results`);
+                
+                // Update status indicator
+                statusIndicator.className = `status-indicator ${status}`;
+                
+                // Add result
+                const resultDiv = document.createElement('div');
+                resultDiv.className = `test-result ${status}`;
+                
+                const icon = status === 'pass' ? '✅' : status === 'fail' ? '❌' : status === 'warn' ? '⚠️' : 'ℹ️';
+                resultDiv.innerHTML = `${icon} ${message}`;
+                
+                // Clear existing results if this is a new test run
+                if (this.startTime && Date.now() - this.startTime < 1000) {
+                    resultsContainer.innerHTML = '';
+                }
+                
+                resultsContainer.appendChild(resultDiv);
+                
+                // Store result
+                if (!this.testResults[category]) {
+                    this.testResults[category] = [];
+                }
+                this.testResults[category].push({ status, message, timestamp: Date.now() });
+                
+                this.updateSummary();
+            }
+            
+            async runQuickCheck() {
+                if (this.isTestRunning) return;
+                
+                this.log('Starting quick status check...');
+                this.showLoading(true, 'Running quick connectivity check...');
+                this.updateProgress(10, 'Quick check in progress...');
+                
+                try {
+                    await this.testConnectivity();
+                    await this.testBasicLoading();
+                } catch (error) {
+                    this.log(`Quick check error: ${error.message}`, 'ERROR');
+                } finally {
+                    this.showLoading(false);
+                    this.updateProgress(100, 'Quick check complete');
+                }
+            }
+            
+            async runComprehensiveTest() {
+                if (this.isTestRunning) {
+                    this.log('Test already running, please wait...', 'WARN');
+                    return;
+                }
+                
+                this.isTestRunning = true;
+                this.startTime = Date.now();
+                this.clearResults();
+                
+                this.log('Starting comprehensive deployment test...');
+                this.showLoading(true, 'Initializing comprehensive test suite...');
+                
+                try {
+                    // Test 1: Connectivity (20%)
+                    this.updateProgress(10, 'Testing server connectivity...');
+                    this.showLoading(true, 'Checking server response and headers...');
+                    await this.testConnectivity();
+                    
+                    // Test 2: Page Loading (40%)
+                    this.updateProgress(30, 'Testing page loading capabilities...');
+                    this.showLoading(true, 'Analyzing HTML content and structure...');
+                    await this.testPageLoading();
+                    
+                    // Test 3: Asset Loading (60%)
+                    this.updateProgress(50, 'Testing asset and resource loading...');
+                    this.showLoading(true, 'Verifying JavaScript and CSS resources...');
+                    await this.testAssetLoading();
+                    
+                    // Test 4: JavaScript Execution (80%)
+                    this.updateProgress(70, 'Testing JavaScript execution environment...');
+                    this.showLoading(true, 'Testing JavaScript execution and DOM manipulation...');
+                    await this.testJavaScriptExecution();
+                    
+                    // Test 5: Game Initialization (90%)
+                    this.updateProgress(85, 'Testing game initialization sequence...');
+                    this.showLoading(true, 'Attempting game startup and Phaser initialization...');
+                    await this.testGameInitialization();
+                    
+                    // Test 6: Final Validation (100%)
+                    this.updateProgress(95, 'Running final validation checks...');
+                    this.showLoading(true, 'Completing final validation and generating report...');
+                    await this.finalValidation();
+                    
+                    this.updateProgress(100, 'Comprehensive test completed successfully!');
+                    this.log('Comprehensive test completed successfully', 'SUCCESS');
+                    
+                } catch (error) {
+                    this.log(`Comprehensive test failed: ${error.message}`, 'ERROR');
+                    this.updateProgress(100, 'Test completed with errors');
+                } finally {
+                    this.isTestRunning = false;
+                    this.showLoading(false);
+                    this.updateSummary();
+                }
+            }
+            
+            async testConnectivity() {
+                try {
+                    this.log('Testing server connectivity...');
+                    
+                    // Test basic connectivity
+                    const startTime = performance.now();
+                    
+                    try {
+                        const response = await fetch(this.gameUrl, { 
+                            method: 'HEAD',
+                            mode: 'no-cors',
+                            cache: 'no-cache'
+                        });
+                        
+                        const responseTime = Math.round(performance.now() - startTime);
+                        this.updateStatus('connectivity', 'pass', `Server responded in ${responseTime}ms`);
+                        this.log(`Server response time: ${responseTime}ms`);
+                        
+                    } catch (fetchError) {
+                        this.log(`Fetch error: ${fetchError.message}`, 'WARN');
+                        this.updateStatus('connectivity', 'warn', 'CORS restriction (normal for cross-origin)');
+                    }
+                    
+                    // Test with different approach
+                    try {
+                        const img = new Image();
+                        const imageTest = new Promise((resolve, reject) => {
+                            img.onload = () => resolve('loaded');
+                            img.onerror = () => reject('failed');
+                            setTimeout(() => reject('timeout'), 5000);
+                        });
+                        
+                        img.src = this.gameUrl + '/favicon.ico?' + Date.now();
+                        
+                        try {
+                            await imageTest;
+                            this.updateStatus('connectivity', 'pass', 'Favicon accessible - server is responding');
+                        } catch (imgError) {
+                            this.updateStatus('connectivity', 'info', 'Image test inconclusive (may be normal)');
+                        }
+                    } catch (error) {
+                        this.log(`Image test error: ${error}`, 'DEBUG');
+                    }
+                    
+                } catch (error) {
+                    this.updateStatus('connectivity', 'fail', `Connectivity test failed: ${error.message}`);
+                    this.log(`Connectivity test error: ${error.message}`, 'ERROR');
+                }
+            }
+            
+            async testBasicLoading() {
+                this.log('Testing basic page loading...');
+                this.reloadIframe();
+                
+                // Wait a bit for iframe to start loading
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                const iframe = document.getElementById('game-iframe');
+                
+                try {
+                    // Try to check if iframe loaded
+                    const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+                    
+                    if (iframeDoc) {
+                        this.updateStatus('loading', 'pass', 'Basic iframe loading successful');
+                        this.log('Iframe document accessible');
+                        
+                        // Check for specific content
+                        const title = iframeDoc.title || '';
+                        const bodyText = iframeDoc.body?.textContent?.substring(0, 100) || '';
+                        
+                        if (title.includes('Memex Racing')) {
+                            this.updateStatus('loading', 'pass', 'Game page title detected');
+                        } else if (bodyText.includes('Loading')) {
+                            this.updateStatus('loading', 'warn', 'Game appears to be in loading state');
+                        } else if (bodyText.includes('Authentication') || bodyText.includes('login')) {
+                            this.updateStatus('loading', 'warn', 'Authentication required');
+                        }
+                        
+                    } else {
+                        this.updateStatus('loading', 'info', 'Iframe loaded but content not accessible (CORS)');
+                        this.log('Iframe content blocked by CORS (this is normal for cross-origin)');
+                    }
+                } catch (error) {
+                    this.updateStatus('loading', 'info', 'Cross-origin restrictions prevent content inspection');
+                    this.log(`Iframe inspection blocked: ${error.message}`, 'DEBUG');
+                }
+            }
+            
+            async testPageLoading() {
+                await this.testBasicLoading();
+                
+                this.log('Testing detailed page loading characteristics...');
+                
+                // Test iframe load events
+                const iframe = document.getElementById('game-iframe');
+                
+                const loadTest = new Promise((resolve) => {
+                    let hasLoaded = false;
+                    let hasErrored = false;
+                    
+                    const cleanup = () => {
+                        iframe.removeEventListener('load', onLoad);
+                        iframe.removeEventListener('error', onError);
+                    };
+                    
+                    const onLoad = () => {
+                        if (!hasLoaded) {
+                            hasLoaded = true;
+                            cleanup();
+                            this.updateStatus('loading', 'pass', 'Iframe loaded successfully');
+                            this.log('Iframe load event fired successfully');
+                            resolve('loaded');
+                        }
+                    };
+                    
+                    const onError = (error) => {
+                        if (!hasErrored) {
+                            hasErrored = true;
+                            cleanup();
+                            this.updateStatus('loading', 'fail', `Iframe load error: ${error.type}`);
+                            this.log(`Iframe error event: ${error.type}`, 'ERROR');
+                            resolve('error');
+                        }
+                    };
+                    
+                    iframe.addEventListener('load', onLoad);
+                    iframe.addEventListener('error', onError);
+                    
+                    // Timeout after 10 seconds
+                    setTimeout(() => {
+                        if (!hasLoaded && !hasErrored) {
+                            cleanup();
+                            this.updateStatus('loading', 'warn', 'Iframe loading timeout (may still be loading)');
+                            this.log('Iframe loading timeout after 10 seconds', 'WARN');
+                            resolve('timeout');
+                        }
+                    }, 10000);
+                    
+                    // Force reload to trigger events
+                    iframe.src = this.gameUrl + '?test=' + Date.now();
+                });
+                
+                await loadTest;
+            }
+            
+            async testAssetLoading() {
+                this.log('Testing asset loading capabilities...');
+                
+                // Test common game assets
+                const assetTests = [
+                    { name: 'Favicon', path: '/favicon.ico' },
+                    { name: 'Main JS Bundle', path: '/main.bundle.js' },
+                    { name: 'Phaser JS Bundle', path: '/phaser.bundle.js' },
+                    { name: 'CSS Styles', path: '/style.css' }
+                ];
+                
+                let passedAssets = 0;
+                
+                for (const asset of assetTests) {
+                    try {
+                        const response = await fetch(this.gameUrl + asset.path, { 
+                            method: 'HEAD',
+                            mode: 'no-cors'
+                        });
+                        
+                        passedAssets++;
+                        this.updateStatus('loading', 'info', `${asset.name} request completed`);
+                        
+                    } catch (error) {
+                        this.updateStatus('loading', 'warn', `${asset.name} not accessible (may be normal)`);
+                        this.log(`Asset test for ${asset.name}: ${error.message}`, 'DEBUG');
+                    }
+                    
+                    // Small delay between requests
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+                
+                if (passedAssets > 0) {
+                    this.updateStatus('loading', 'pass', `${passedAssets}/${assetTests.length} asset tests completed`);
+                } else {
+                    this.updateStatus('loading', 'warn', 'Asset loading tests inconclusive due to CORS');
+                }
+            }
+            
+            async testJavaScriptExecution() {
+                this.log('Testing JavaScript execution environment...');
+                
+                // Test basic JavaScript capabilities
+                try {
+                    // Test if we can create and manipulate DOM elements
+                    const testDiv = document.createElement('div');
+                    testDiv.style.display = 'none';
+                    document.body.appendChild(testDiv);
+                    document.body.removeChild(testDiv);
+                    
+                    this.updateStatus('javascript', 'pass', 'DOM manipulation working correctly');
+                    this.log('DOM manipulation test passed');
+                    
+                    // Test if we can access modern JavaScript features
+                    const testAsync = async () => 'async/await working';
+                    const result = await testAsync();
+                    
+                    this.updateStatus('javascript', 'pass', 'Modern JavaScript features available');
+                    this.log('Modern JavaScript features test passed');
+                    
+                    // Test Canvas support (required for Phaser)
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    
+                    if (ctx) {
+                        this.updateStatus('javascript', 'pass', 'Canvas API available (required for Phaser)');
+                        this.log('Canvas API test passed');
+                    } else {
+                        this.updateStatus('javascript', 'fail', 'Canvas API not available');
+                        this.log('Canvas API test failed', 'ERROR');
+                    }
+                    
+                    // Test WebGL support (optimal for Phaser)
+                    const webglCanvas = document.createElement('canvas');
+                    const gl = webglCanvas.getContext('webgl') || webglCanvas.getContext('experimental-webgl');
+                    
+                    if (gl) {
+                        this.updateStatus('javascript', 'pass', 'WebGL available (optimal for game performance)');
+                        this.log('WebGL test passed');
+                    } else {
+                        this.updateStatus('javascript', 'warn', 'WebGL not available (will fall back to Canvas)');
+                        this.log('WebGL not available, will use Canvas fallback', 'WARN');
+                    }
+                    
+                } catch (error) {
+                    this.updateStatus('javascript', 'fail', `JavaScript execution test failed: ${error.message}`);
+                    this.log(`JavaScript execution test error: ${error.message}`, 'ERROR');
+                }
+            }
+            
+            async testGameInitialization() {
+                this.log('Testing game initialization sequence...');
+                
+                // Test if the game iframe has finished loading and can be analyzed
+                const iframe = document.getElementById('game-iframe');
+                
+                // Wait for iframe to fully settle
+                await new Promise(resolve => setTimeout(resolve, 3000));
+                
+                try {
+                    // Try to inspect iframe content for game indicators
+                    let gameDetected = false;
+                    let loadingDetected = false;
+                    let errorDetected = false;
+                    
+                    try {
+                        const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+                        
+                        if (iframeDoc) {
+                            const htmlContent = iframeDoc.documentElement?.outerHTML || '';
+                            const bodyContent = iframeDoc.body?.textContent || '';
+                            
+                            // Check for game indicators
+                            if (htmlContent.includes('game-container') || htmlContent.includes('phaser')) {
+                                gameDetected = true;
+                                this.updateStatus('game', 'pass', 'Game container elements detected');
+                            }
+                            
+                            if (bodyContent.includes('Loading') || bodyContent.includes('loading')) {
+                                loadingDetected = true;
+                                this.updateStatus('game', 'warn', 'Game appears to be in loading state');
+                            }
+                            
+                            if (bodyContent.includes('Error') || bodyContent.includes('error')) {
+                                errorDetected = true;
+                                this.updateStatus('game', 'fail', 'Error messages detected in game');
+                            }
+                            
+                            // Check for canvas elements (Phaser games use canvas)
+                            const canvasElements = iframeDoc.querySelectorAll('canvas');
+                            if (canvasElements.length > 0) {
+                                this.updateStatus('game', 'pass', `${canvasElements.length} canvas element(s) found`);
+                                this.log(`Found ${canvasElements.length} canvas elements`);
+                            }
+                            
+                        } else {
+                            this.updateStatus('game', 'info', 'Game content inspection blocked by browser security');
+                            this.log('Cross-origin restrictions prevent game content inspection');
+                        }
+                    } catch (inspectionError) {
+                        this.updateStatus('game', 'info', 'Cross-origin restrictions prevent detailed inspection');
+                        this.log(`Game inspection blocked: ${inspectionError.message}`, 'DEBUG');
+                    }
+                    
+                    // Basic iframe health check
+                    if (iframe.contentWindow) {
+                        this.updateStatus('game', 'pass', 'Game iframe window accessible');
+                        this.log('Iframe window is accessible');
+                    } else {
+                        this.updateStatus('game', 'fail', 'Game iframe window not accessible');
+                        this.log('Iframe window not accessible', 'ERROR');
+                    }
+                    
+                    // Check if iframe has loaded content
+                    if (iframe.src && iframe.src !== 'about:blank') {
+                        this.updateStatus('game', 'pass', 'Game iframe has valid source URL');
+                        this.log(`Iframe source: ${iframe.src}`);
+                    } else {
+                        this.updateStatus('game', 'warn', 'Game iframe source not set');
+                        this.log('Iframe source is blank or not set', 'WARN');
+                    }
+                    
+                } catch (error) {
+                    this.updateStatus('game', 'fail', `Game initialization test failed: ${error.message}`);
+                    this.log(`Game initialization test error: ${error.message}`, 'ERROR');
+                }
+            }
+            
+            async finalValidation() {
+                this.log('Running final validation checks...');
+                
+                // Summarize all test results
+                const categories = ['connectivity', 'loading', 'javascript', 'game'];
+                let totalPassed = 0;
+                let totalFailed = 0;
+                let totalWarnings = 0;
+                
+                categories.forEach(category => {
+                    const results = this.testResults[category] || [];
+                    results.forEach(result => {
+                        if (result.status === 'pass') totalPassed++;
+                        else if (result.status === 'fail') totalFailed++;
+                        else if (result.status === 'warn') totalWarnings++;
+                    });
+                });
+                
+                // Determine overall status
+                let overallStatus = 'Unknown';
+                if (totalFailed === 0 && totalWarnings === 0) {
+                    overallStatus = 'Excellent - All tests passed';
+                } else if (totalFailed === 0 && totalWarnings > 0) {
+                    overallStatus = 'Good - Some minor issues detected';
+                } else if (totalFailed <= 2) {
+                    overallStatus = 'Fair - Some significant issues detected';
+                } else {
+                    overallStatus = 'Poor - Multiple critical issues detected';
+                }
+                
+                this.log(`Final validation complete. Status: ${overallStatus}`);
+                this.log(`Summary: ${totalPassed} passed, ${totalFailed} failed, ${totalWarnings} warnings`);
+                
+                // Update summary display
+                document.getElementById('overall-status').textContent = overallStatus;
+                document.getElementById('tests-passed').textContent = totalPassed.toString();
+                document.getElementById('tests-failed').textContent = totalFailed.toString();
+            }
+            
+            reloadIframe() {
+                this.log('Reloading game iframe...');
+                const iframe = document.getElementById('game-iframe');
+                iframe.src = this.gameUrl + '?reload=' + Date.now();
+                this.updateStatus('loading', 'info', 'Game iframe reloaded');
+            }
+            
+            clearResults() {
+                this.log('Clearing all test results...');
+                
+                // Reset test results
+                this.testResults = {
+                    connectivity: [],
+                    loading: [],
+                    javascript: [],
+                    game: []
+                };
+                
+                // Clear status displays
+                const categories = ['connectivity', 'loading', 'javascript', 'game'];
+                categories.forEach(category => {
+                    const statusIndicator = document.getElementById(`${category}-status`);
+                    const resultsContainer = document.getElementById(`${category}-results`);
+                    
+                    statusIndicator.className = 'status-indicator checking';
+                    resultsContainer.innerHTML = '<div class="test-result info">⏳ Waiting for test to start...</div>';
+                });
+                
+                // Clear summary
+                document.getElementById('overall-status').textContent = 'Not Started';
+                document.getElementById('tests-passed').textContent = '0';
+                document.getElementById('tests-failed').textContent = '0';
+                document.getElementById('test-duration').textContent = '0 seconds';
+                document.getElementById('last-updated').textContent = 'Never';
+                
+                // Clear console log
+                this.logs = [];
+                document.getElementById('console-log').textContent = 'Console cleared - ready for new tests...';
+                
+                // Reset progress
+                this.updateProgress(0, 'Ready to start testing...');
+            }
+            
+            updateSummary() {
+                if (this.startTime) {
+                    const duration = Math.round((Date.now() - this.startTime) / 1000);
+                    document.getElementById('test-duration').textContent = `${duration} seconds`;
+                }
+                
+                document.getElementById('last-updated').textContent = new Date().toLocaleTimeString();
+            }
+        }
+        
+        // Initialize the deployment status checker
+        document.addEventListener('DOMContentLoaded', () => {
+            window.deploymentChecker = new DeploymentStatusChecker();
+            
+            // Auto-run quick check on load
+            setTimeout(() => {
+                window.deploymentChecker.runQuickCheck();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

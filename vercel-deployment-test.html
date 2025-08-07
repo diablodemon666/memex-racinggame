@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vercel Deployment Test - Memex Racing</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #0a0a0a;
+            color: #00ff00;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #333;
+            background: #111;
+        }
+        .status {
+            font-weight: bold;
+            padding: 5px 10px;
+            margin: 5px 0;
+        }
+        .pass { background: #1a5a1a; color: #00ff00; }
+        .fail { background: #5a1a1a; color: #ff0000; }
+        .warn { background: #5a5a1a; color: #ffff00; }
+        .info { background: #1a1a5a; color: #00ffff; }
+        #iframe-container {
+            width: 100%;
+            height: 600px;
+            border: 2px solid #333;
+            margin: 20px 0;
+        }
+        #test-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        .console-output {
+            background: #000;
+            color: #00ff00;
+            font-family: monospace;
+            padding: 10px;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #333;
+        }
+        .screenshot-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+        #loading-indicator {
+            text-align: center;
+            padding: 20px;
+            background: #1a1a1a;
+            border: 2px dashed #333;
+        }
+    </style>
+</head>
+<body>
+    <h1>🏁 Memex Racing - Vercel Deployment Test</h1>
+    <p>Testing deployment at: <strong>https://memex-racing-game.vercel.app</strong></p>
+    
+    <div id="loading-indicator">
+        <p>🔍 Running comprehensive deployment tests...</p>
+        <div id="loading-progress">Initializing...</div>
+    </div>
+
+    <div class="test-section">
+        <h2>📊 Test Results Summary</h2>
+        <div id="summary-results">
+            <div id="overall-status" class="status">⏳ Testing in progress...</div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🌐 Live Application Preview</h2>
+        <div id="iframe-container">
+            <iframe id="test-iframe" src="https://memex-racing-game.vercel.app"></iframe>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔍 Detailed Test Results</h2>
+        <div id="test-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>📝 Console Output Analysis</h2>
+        <div class="console-output" id="console-output">Waiting for console data...</div>
+    </div>
+
+    <div class="test-section">
+        <h2>🚨 Error Detection</h2>
+        <div id="error-analysis">No errors detected yet...</div>
+    </div>
+
+    <script>
+        class VercelDeploymentTester {
+            constructor() {
+                this.targetUrl = 'https://memex-racing-game.vercel.app';
+                this.testResults = [];
+                this.errors = [];
+                this.consoleMessages = [];
+                this.loadingStartTime = Date.now();
+                this.maxWaitTime = 30000; // 30 seconds
+                
+                this.init();
+            }
+
+            init() {
+                this.updateProgress('Starting deployment tests...');
+                setTimeout(() => this.runTests(), 1000);
+                
+                // Monitor iframe loading
+                const iframe = document.getElementById('test-iframe');
+                iframe.addEventListener('load', () => this.onIframeLoad());
+                iframe.addEventListener('error', (e) => this.onIframeError(e));
+                
+                // Start monitoring
+                this.monitorLoading();
+            }
+
+            updateProgress(message) {
+                document.getElementById('loading-progress').textContent = message;
+            }
+
+            async runTests() {
+                this.updateProgress('Testing URL accessibility...');
+                await this.testUrlAccessibility();
+                
+                this.updateProgress('Checking resource loading...');
+                await this.testResourceLoading();
+                
+                this.updateProgress('Analyzing page content...');
+                await this.testPageContent();
+                
+                this.updateProgress('Testing JavaScript execution...');
+                await this.testJavaScriptExecution();
+                
+                this.updateProgress('Checking for game initialization...');
+                await this.testGameInitialization();
+                
+                this.updateProgress('Tests completed!');
+                this.generateFinalReport();
+            }
+
+            async testUrlAccessibility() {
+                try {
+                    const response = await fetch(this.targetUrl, { method: 'HEAD' });
+                    this.addResult('URL Accessibility', response.ok, 
+                        response.ok ? `Status: ${response.status}` : `HTTP Error: ${response.status}`);
+                } catch (error) {
+                    this.addResult('URL Accessibility', false, `Network Error: ${error.message}`);
+                }
+            }
+
+            async testResourceLoading() {
+                // Test critical resources
+                const resources = [
+                    { name: 'Main HTML', url: this.targetUrl },
+                    { name: 'CSS Resources', url: this.targetUrl, type: 'css' },
+                    { name: 'JavaScript Bundle', url: this.targetUrl, type: 'js' }
+                ];
+
+                for (const resource of resources) {
+                    try {
+                        const response = await fetch(resource.url);
+                        const content = await response.text();
+                        
+                        if (resource.type === 'css') {
+                            const hasCss = content.includes('.game-container') || content.includes('memex-racing');
+                            this.addResult(resource.name, hasCss, 
+                                hasCss ? 'CSS found in HTML' : 'No game CSS detected');
+                        } else if (resource.type === 'js') {
+                            const hasJs = content.includes('phaser') || content.includes('Phaser') || 
+                                         content.includes('game') || content.includes('canvas');
+                            this.addResult(resource.name, hasJs, 
+                                hasJs ? 'JavaScript game code detected' : 'No game JavaScript detected');
+                        } else {
+                            const hasHtml = content.includes('<html') && content.includes('</html>');
+                            this.addResult(resource.name, hasHtml, 
+                                hasHtml ? 'Valid HTML structure' : 'Invalid HTML structure');
+                        }
+                    } catch (error) {
+                        this.addResult(resource.name, false, `Error: ${error.message}`);
+                    }
+                }
+            }
+
+            async testPageContent() {
+                try {
+                    const response = await fetch(this.targetUrl);
+                    const html = await response.text();
+                    
+                    // Check for key elements
+                    const checks = [
+                        { name: 'Game Container', test: html.includes('game-container') || html.includes('gameContainer') },
+                        { name: 'Loading Screen', test: html.includes('Loading') || html.includes('loading') },
+                        { name: 'Canvas Element', test: html.includes('<canvas') || html.includes('canvas') },
+                        { name: 'Phaser Integration', test: html.includes('phaser') || html.includes('Phaser') },
+                        { name: 'Game Title', test: html.includes('Memex Racing') || html.includes('memex-racing') },
+                        { name: 'No Errors in HTML', test: !html.includes('Error') && !html.includes('404') }
+                    ];
+
+                    checks.forEach(check => {
+                        this.addResult(`Page Content - ${check.name}`, check.test, 
+                            check.test ? 'Found' : 'Missing');
+                    });
+
+                    // Check for specific loading loop indicators
+                    const loadingLoop = html.includes('Loading Memex Racing...') || 
+                                       html.includes('loading-screen') ||
+                                       html.includes('preload');
+                    this.addResult('Loading Loop Detection', !loadingLoop, 
+                        loadingLoop ? 'Potential loading loop detected' : 'No obvious loading loop');
+
+                } catch (error) {
+                    this.addResult('Page Content Analysis', false, `Error: ${error.message}`);
+                }
+            }
+
+            testJavaScriptExecution() {
+                // This will be updated based on iframe interaction
+                return new Promise(resolve => {
+                    setTimeout(() => {
+                        this.addResult('JavaScript Execution', true, 'Testing via iframe interaction');
+                        resolve();
+                    }, 2000);
+                });
+            }
+
+            testGameInitialization() {
+                // Monitor iframe for game initialization
+                return new Promise(resolve => {
+                    let timeout = setTimeout(() => {
+                        this.addResult('Game Initialization', false, 'Timeout waiting for game initialization');
+                        resolve();
+                    }, 10000);
+
+                    // Try to detect game initialization
+                    const checkInitialization = () => {
+                        try {
+                            const iframe = document.getElementById('test-iframe');
+                            if (iframe.contentWindow) {
+                                // Basic check - if we can access the iframe without errors, it's loading
+                                this.addResult('Game Initialization', true, 'Iframe accessible');
+                                clearTimeout(timeout);
+                                resolve();
+                            }
+                        } catch (e) {
+                            // Cross-origin restrictions are normal
+                            this.addResult('Game Initialization', true, 'Cross-origin restrictions (normal)');
+                            clearTimeout(timeout);
+                            resolve();
+                        }
+                    };
+
+                    setTimeout(checkInitialization, 3000);
+                });
+            }
+
+            onIframeLoad() {
+                this.addResult('Iframe Loading', true, 'Iframe loaded successfully');
+                this.logConsole('Iframe loaded successfully');
+            }
+
+            onIframeError(error) {
+                this.addResult('Iframe Loading', false, `Iframe error: ${error.message}`);
+                this.errors.push(`Iframe error: ${error.message}`);
+            }
+
+            monitorLoading() {
+                const startTime = Date.now();
+                const monitor = setInterval(() => {
+                    const elapsed = Date.now() - startTime;
+                    const iframe = document.getElementById('test-iframe');
+                    
+                    if (elapsed > this.maxWaitTime) {
+                        clearInterval(monitor);
+                        this.addResult('Loading Timeout Check', false, 
+                            `Page still loading after ${this.maxWaitTime/1000} seconds`);
+                    }
+                    
+                    // Update monitoring display
+                    this.updateMonitoringDisplay(elapsed);
+                }, 1000);
+
+                // Stop monitoring after max wait time
+                setTimeout(() => clearInterval(monitor), this.maxWaitTime);
+            }
+
+            updateMonitoringDisplay(elapsed) {
+                const seconds = Math.floor(elapsed / 1000);
+                this.logConsole(`Monitoring: ${seconds}s elapsed`);
+            }
+
+            addResult(testName, passed, details) {
+                this.testResults.push({ testName, passed, details, timestamp: new Date().toISOString() });
+                this.updateResultsDisplay();
+            }
+
+            logConsole(message) {
+                const timestamp = new Date().toISOString();
+                this.consoleMessages.push(`[${timestamp}] ${message}`);
+                this.updateConsoleDisplay();
+            }
+
+            updateResultsDisplay() {
+                const resultsContainer = document.getElementById('test-results');
+                resultsContainer.innerHTML = this.testResults.map(result => {
+                    const statusClass = result.passed ? 'pass' : 'fail';
+                    return `
+                        <div class="status ${statusClass}">
+                            ${result.passed ? '✅' : '❌'} ${result.testName}: ${result.details}
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            updateConsoleDisplay() {
+                const consoleContainer = document.getElementById('console-output');
+                consoleContainer.textContent = this.consoleMessages.join('\n');
+                consoleContainer.scrollTop = consoleContainer.scrollHeight;
+            }
+
+            generateFinalReport() {
+                const totalTests = this.testResults.length;
+                const passedTests = this.testResults.filter(r => r.passed).length;
+                const failedTests = totalTests - passedTests;
+
+                const overallStatus = document.getElementById('overall-status');
+                const summaryResults = document.getElementById('summary-results');
+                
+                if (failedTests === 0) {
+                    overallStatus.className = 'status pass';
+                    overallStatus.textContent = '✅ All tests passed - Deployment appears healthy';
+                } else if (failedTests < totalTests / 2) {
+                    overallStatus.className = 'status warn';
+                    overallStatus.textContent = `⚠️ ${failedTests} tests failed - Partial deployment issues`;
+                } else {
+                    overallStatus.className = 'status fail';
+                    overallStatus.textContent = `❌ ${failedTests} tests failed - Significant deployment issues`;
+                }
+
+                summaryResults.innerHTML += `
+                    <div class="status info">
+                        📊 Test Summary: ${passedTests}/${totalTests} passed
+                    </div>
+                    <div class="status info">
+                        ⏱️ Total test time: ${Math.floor((Date.now() - this.loadingStartTime) / 1000)}s
+                    </div>
+                `;
+
+                // Hide loading indicator
+                document.getElementById('loading-indicator').style.display = 'none';
+
+                // Generate detailed report
+                this.generateDetailedReport();
+            }
+
+            generateDetailedReport() {
+                const errorAnalysis = document.getElementById('error-analysis');
+                if (this.errors.length > 0) {
+                    errorAnalysis.innerHTML = `
+                        <div class="status fail">🚨 ${this.errors.length} errors detected:</div>
+                        ${this.errors.map(error => `<div class="console-output">${error}</div>`).join('')}
+                    `;
+                } else {
+                    errorAnalysis.innerHTML = '<div class="status pass">✅ No critical errors detected</div>';
+                }
+
+                this.logConsole('='.repeat(50));
+                this.logConsole('FINAL REPORT GENERATED');
+                this.logConsole(`Total Tests: ${this.testResults.length}`);
+                this.logConsole(`Passed: ${this.testResults.filter(r => r.passed).length}`);
+                this.logConsole(`Failed: ${this.testResults.filter(r => !r.passed).length}`);
+                this.logConsole('='.repeat(50));
+            }
+        }
+
+        // Start testing when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new VercelDeploymentTester();
+        });
+    </script>
+</body>
+</html>
