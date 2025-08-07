@@ -6,13 +6,6 @@
  */
 
 import Phaser from 'phaser';
-// Development configuration and utilities
-import { 
-  developmentConfig, 
-  DevelopmentPerformanceMonitor, 
-  HMRHandler, 
-  devUtils 
-} from '@config/development';
 // Authentication integration
 import loginIntegration from './auth/login-integration';
 import { AuthGameBridge } from './game/systems/AuthGameBridge';
@@ -33,15 +26,15 @@ const gameVersion = process.env.VERSION || '0.1.0';
 
 /**
  * Environment Configuration
- * Enhanced configuration using development module
+ * Production-safe configuration with conditional development features
  */
-const currentConfig = isDevelopment ? developmentConfig : {
+let currentConfig = {
   debug: {
     enabled: false,
     verbose: false,
     showFPS: false,
     showMemory: false,
-    logLevel: 'error',
+    logLevel: isProduction ? 'error' : 'info',
   },
   hotReload: {
     enabled: false,
@@ -54,6 +47,12 @@ const currentConfig = isDevelopment ? developmentConfig : {
     showStuckDetection: false,
   },
 };
+
+// Development modules will be loaded conditionally
+let developmentConfig = null;
+let DevelopmentPerformanceMonitor = null;
+let HMRHandler = null;
+let devUtils = null;
 
 /**
  * Phaser Game Configuration
@@ -418,17 +417,99 @@ class GameErrorBoundary {
 }
 
 /**
+ * Load environment-specific modules
+ * @returns {Promise<Object>} Environment modules
+ */
+async function loadEnvironmentModules() {
+  if (isDevelopment) {
+    try {
+      const devModule = await import('@config/development');
+      console.log('[Init] ✅ Development modules loaded successfully');
+      
+      // Update current config with development settings
+      if (devModule.developmentConfig) {
+        Object.assign(currentConfig, devModule.developmentConfig);
+      }
+      
+      return {
+        config: devModule.developmentConfig,
+        PerformanceMonitor: devModule.DevelopmentPerformanceMonitor,
+        HMRHandler: devModule.HMRHandler,
+        devUtils: devModule.devUtils
+      };
+    } catch (error) {
+      console.warn('[Init] ⚠️ Failed to load development modules, falling back to production config:', error.message);
+      // Fall through to production modules
+    }
+  }
+
+  // Load production modules (or as fallback for failed dev load)
+  try {
+    const prodModule = await import('@config/production');
+    console.log('[Init] ✅ Production modules loaded successfully');
+    
+    // Update current config with production settings
+    if (prodModule.productionConfig) {
+      Object.assign(currentConfig, prodModule.productionConfig);
+    }
+    
+    return {
+      config: prodModule.productionConfig,
+      PerformanceMonitor: prodModule.ProductionPerformanceMonitor,
+      HMRHandler: prodModule.ProductionHMRHandler,
+      devUtils: prodModule.productionDevUtils
+    };
+  } catch (error) {
+    console.error('[Init] ❌ Failed to load both development and production modules:', error.message);
+    
+    // Return minimal fallbacks
+    return {
+      config: null,
+      PerformanceMonitor: class NoOpMonitor { 
+        constructor() {} 
+        startMonitoring() {} 
+        stop() {} 
+        getAverageFPS() { return 0; } 
+        getCurrentMemory() { return 0; } 
+      },
+      HMRHandler: class NoOpHMR { 
+        constructor() {} 
+        setupHMR() {} 
+      },
+      devUtils: { 
+        setupGlobalDebugFunctions() {
+          if (typeof window !== 'undefined') {
+            window.debugGame = { reloadPage: () => window.location.reload() };
+          }
+        } 
+      }
+    };
+  }
+}
+
+/**
  * Game Initialization Function
  * Main initialization logic with error handling
  */
 async function initializeGame() {
+  // Always log initialization in production for debugging
+  console.log('🎮 Initializing Memex Racing Game...');
+  console.log('Environment:', process.env.NODE_ENV || 'production');
+  console.log('Version:', gameVersion);
+  console.log('Debug mode:', isDevelopment);
+  
   try {
-    if (isDevelopment) {
-      console.log('Initializing Memex Racing Game...');
-      console.log('Environment:', process.env.NODE_ENV);
-      console.log('Version:', gameVersion);
-      console.log('Config:', currentConfig);
-    }
+    // Load environment-specific modules
+    const envModules = await loadEnvironmentModules();
+    developmentConfig = envModules.config;
+    DevelopmentPerformanceMonitor = envModules.PerformanceMonitor;
+    HMRHandler = envModules.HMRHandler;
+    devUtils = envModules.devUtils;
+    
+    console.log('📊 Current config loaded:', {
+      debug: currentConfig.debug.enabled,
+      environment: isDevelopment ? 'development' : 'production'
+    });
     
     // Create error boundary
     const errorBoundary = new GameErrorBoundary();
@@ -437,19 +518,26 @@ async function initializeGame() {
     let performanceMonitor = null;
     let hmrHandler = null;
     
-    if (isDevelopment) {
-      // Setup performance monitoring
-      performanceMonitor = new DevelopmentPerformanceMonitor();
-      window.performanceMonitor = performanceMonitor;
-      
-      // Setup hot module replacement
-      hmrHandler = new HMRHandler();
-      hmrHandler.setupHMR();
-      
-      // Setup global debug functions
-      devUtils.setupGlobalDebugFunctions();
-      
-      console.log('Development tools initialized');
+    if (isDevelopment && DevelopmentPerformanceMonitor && HMRHandler && devUtils) {
+      try {
+        // Setup performance monitoring
+        performanceMonitor = new DevelopmentPerformanceMonitor();
+        window.performanceMonitor = performanceMonitor;
+        
+        // Setup hot module replacement
+        hmrHandler = new HMRHandler();
+        hmrHandler.setupHMR();
+        
+        // Setup global debug functions
+        devUtils.setupGlobalDebugFunctions();
+        
+        console.log('✅ Development tools initialized');
+      } catch (error) {
+        console.warn('⚠️ Failed to initialize development tools:', error.message);
+        // Continue without development tools
+      }
+    } else if (isDevelopment) {
+      console.log('⚠️ Development tools not available, continuing without them');
     }
     
     // Validate required DOM elements
@@ -458,17 +546,64 @@ async function initializeGame() {
       throw new Error('Game container element not found');
     }
     
-    // Initialize Phaser game
+    // Initialize Phaser game with error handling
+    console.log('📦 Creating Phaser game instance...');
+    console.log('📊 Game config:', {
+      scenes: gameConfig.scene.map(s => s.name || s.key || 'Unknown'),
+      dimensions: `${gameConfig.width}x${gameConfig.height}`,
+      physics: gameConfig.physics.default
+    });
+    
     const game = new Phaser.Game(gameConfig);
+    console.log('✅ Phaser game created successfully');
+    
+    // Add scene transition logging
+    game.events.on('step', () => {
+      const activeScenes = game.scene.scenes.filter(scene => scene.scene.isActive());
+      if (activeScenes.length > 0) {
+        const sceneKeys = activeScenes.map(scene => scene.scene.key);
+        if (window.lastActiveScenes !== JSON.stringify(sceneKeys)) {
+          console.log('🎭 Active scenes changed:', sceneKeys);
+          window.lastActiveScenes = JSON.stringify(sceneKeys);
+        }
+      }
+    });
+    
+    // Log scene manager events
+    game.scene.systems.forEach((system, key) => {
+      if (system.scene && system.scene.events) {
+        system.scene.events.on('create', () => {
+          console.log(`🎬 Scene created: ${key}`);
+        });
+        
+        system.scene.events.on('ready', () => {
+          console.log(`✅ Scene ready: ${key}`);
+        });
+        
+        system.scene.events.on('shutdown', () => {
+          console.log(`🛑 Scene shutdown: ${key}`);
+        });
+        
+        system.scene.events.on('destroy', () => {
+          console.log(`💥 Scene destroyed: ${key}`);
+        });
+      }
+    });
     
     // Initialize UI system
+    console.log('🎨 Initializing UI system...');
     const uiManager = await initializeUI(game);
+    console.log('✅ UI system initialized');
     
     // Initialize enhanced authentication integration
+    console.log('🔐 Initializing authentication...');
     const { authGameBridge, authResult } = await initializeAuthIntegration(game, uiManager);
+    console.log('✅ Authentication initialized');
     
     // Initialize multiplayer events system
+    console.log('🌐 Initializing multiplayer events...');
     initializeMultiplayerEvents(game);
+    console.log('✅ Multiplayer events initialized');
     
     // Store game instance globally for debugging
     if (isDevelopment) {
@@ -504,16 +639,23 @@ async function initializeGame() {
     };
     
   } catch (error) {
-    console.error('Failed to initialize game:', error);
+    console.error('❌ Failed to initialize game:', error);
+    console.error('Stack trace:', error.stack);
     
-    // Show fallback error message
+    // Show detailed error message
     const gameContainer = document.getElementById('game-container');
     if (gameContainer) {
+      const errorDetails = process.env.NODE_ENV === 'development' || window.location.hostname === 'localhost' 
+        ? `<pre style="text-align: left; overflow: auto; max-height: 200px;">${error.stack || error.message}</pre>`
+        : '';
+      
       gameContainer.innerHTML = `
         <div class="error-message">
           <h2>Game Initialization Failed</h2>
-          <p>${error.message}</p>
-          <button onclick="location.reload()">Reload Page</button>
+          <p><strong>Error:</strong> ${error.message}</p>
+          ${errorDetails}
+          <p style="margin-top: 10px;">Please check the browser console for more details.</p>
+          <button onclick="location.reload()" style="margin-top: 10px; padding: 10px 20px; background: #00ff00; color: #000; border: none; cursor: pointer; font-weight: bold;">Reload Page</button>
         </div>
       `;
     }

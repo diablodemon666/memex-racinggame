@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Memex Racing - Debug Console</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #000;
+            color: #0f0;
+            padding: 20px;
+            margin: 0;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        h1 { 
+            color: #00ff00; 
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+        h2 { 
+            color: #00ffff; 
+            margin-top: 20px;
+        }
+        .status-box {
+            background: #111;
+            border: 1px solid #0f0;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .error { color: #ff0000; }
+        .success { color: #00ff00; }
+        .warning { color: #ffff00; }
+        .info { color: #00ffff; }
+        .log-box {
+            background: #000;
+            border: 1px solid #0f0;
+            padding: 10px;
+            margin: 10px 0;
+            height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            font-size: 12px;
+        }
+        button {
+            background: #00ff00;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            font-family: monospace;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #00ff00cc;
+        }
+        button:disabled {
+            background: #555;
+            color: #999;
+            cursor: not-allowed;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .asset-check {
+            display: inline-block;
+            margin: 5px;
+            padding: 5px 10px;
+            border-radius: 3px;
+        }
+        .asset-loading { background: #444; color: #fff; }
+        .asset-success { background: #0f0; color: #000; }
+        .asset-error { background: #f00; color: #fff; }
+        iframe {
+            width: 100%;
+            height: 600px;
+            border: 2px solid #0f0;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Memex Racing - Debug Console</h1>
+        
+        <div class="status-box">
+            <h2>🌐 Environment Info</h2>
+            <div id="env-info">Loading...</div>
+        </div>
+
+        <div class="grid">
+            <div>
+                <h2>🧪 System Checks</h2>
+                <button onclick="runAllChecks()">Run All Checks</button>
+                <button onclick="checkBundles()">Check JS Bundles</button>
+                <button onclick="checkAssets()">Check Assets</button>
+                <button onclick="checkPhaser()">Check Phaser</button>
+                <button onclick="clearLogs()">Clear Logs</button>
+                <div id="system-status" class="log-box"></div>
+            </div>
+            
+            <div>
+                <h2>📦 Asset Loading Status</h2>
+                <div id="asset-status" class="log-box"></div>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div>
+                <h2>🚨 Console Output</h2>
+                <div id="console-log" class="log-box"></div>
+            </div>
+            
+            <div>
+                <h2>🌐 Network Requests</h2>
+                <div id="network-log" class="log-box"></div>
+            </div>
+        </div>
+
+        <div>
+            <h2>🎮 Game Instance</h2>
+            <button onclick="loadGame()">Load Game</button>
+            <button onclick="reloadGame()">Reload Game</button>
+            <button onclick="inspectGame()">Inspect Game State</button>
+            <div id="game-container" style="display: none;">
+                <iframe id="game-frame" src=""></iframe>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get deployment URL from current location
+        const DEPLOYMENT_URL = window.location.origin;
+        let gameLoaded = false;
+        let originalConsole = {};
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            setupConsoleInterception();
+            setupNetworkMonitoring();
+            displayEnvironmentInfo();
+            runAllChecks();
+        });
+        
+        function displayEnvironmentInfo() {
+            const info = document.getElementById('env-info');
+            info.innerHTML = `
+                <div class="info">URL: ${DEPLOYMENT_URL}</div>
+                <div class="info">User Agent: ${navigator.userAgent}</div>
+                <div class="info">Platform: ${navigator.platform}</div>
+                <div class="info">Language: ${navigator.language}</div>
+                <div class="info">Online: ${navigator.onLine ? 'Yes' : 'No'}</div>
+                <div class="info">Screen: ${screen.width}x${screen.height}</div>
+                <div class="info">Window: ${window.innerWidth}x${window.innerHeight}</div>
+            `;
+        }
+        
+        function setupConsoleInterception() {
+            const consoleLog = document.getElementById('console-log');
+            
+            // Store original console methods
+            originalConsole = {
+                log: console.log,
+                error: console.error,
+                warn: console.warn,
+                info: console.info
+            };
+            
+            // Intercept console methods
+            console.log = function(...args) {
+                log('info', args.join(' '), 'console-log');
+                originalConsole.log.apply(console, args);
+            };
+            
+            console.error = function(...args) {
+                log('error', args.join(' '), 'console-log');
+                originalConsole.error.apply(console, args);
+            };
+            
+            console.warn = function(...args) {
+                log('warning', args.join(' '), 'console-log');
+                originalConsole.warn.apply(console, args);
+            };
+            
+            console.info = function(...args) {
+                log('info', args.join(' '), 'console-log');
+                originalConsole.info.apply(console, args);
+            };
+            
+            // Capture global errors
+            window.addEventListener('error', (event) => {
+                log('error', `Global Error: ${event.message} at ${event.filename}:${event.lineno}:${event.colno}`, 'console-log');
+            });
+            
+            window.addEventListener('unhandledrejection', (event) => {
+                log('error', `Unhandled Promise Rejection: ${event.reason}`, 'console-log');
+            });
+        }
+        
+        function setupNetworkMonitoring() {
+            // Monitor fetch requests
+            const originalFetch = window.fetch;
+            window.fetch = function(...args) {
+                const url = args[0];
+                const startTime = performance.now();
+                
+                return originalFetch.apply(this, args)
+                    .then(response => {
+                        const duration = Math.round(performance.now() - startTime);
+                        const status = response.ok ? 'success' : 'error';
+                        log(status, `[${response.status}] ${url} (${duration}ms)`, 'network-log');
+                        return response;
+                    })
+                    .catch(error => {
+                        log('error', `Failed: ${url} - ${error.message}`, 'network-log');
+                        throw error;
+                    });
+            };
+        }
+        
+        function log(type, message, target = 'system-status') {
+            const logDiv = document.getElementById(target);
+            if (!logDiv) return;
+            
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'error' : 
+                             type === 'success' ? 'success' : 
+                             type === 'warning' ? 'warning' : 'info';
+            
+            const entry = document.createElement('div');
+            entry.className = className;
+            entry.textContent = `[${timestamp}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        async function runAllChecks() {
+            log('info', 'Starting all system checks...');
+            await checkBundles();
+            await checkAssets();
+            await checkPhaser();
+            log('success', 'All checks completed');
+        }
+        
+        async function checkBundles() {
+            log('info', 'Checking JavaScript bundles...');
+            
+            const bundles = [
+                '/runtime.*.bundle.js',
+                '/main.*.bundle.js',
+                '/phaser.*.bundle.js',
+                '/vendors.*.bundle.js',
+                '/game-engine.*.bundle.js',
+                '/game-systems.*.bundle.js'
+            ];
+            
+            // First, fetch the index.html to get actual bundle names
+            try {
+                const response = await fetch('/');
+                const html = await response.text();
+                
+                // Extract script sources
+                const scriptRegex = /src="([^"]+\.bundle\.js)"/g;
+                let match;
+                const actualBundles = [];
+                
+                while ((match = scriptRegex.exec(html)) !== null) {
+                    actualBundles.push(match[1]);
+                }
+                
+                for (const bundle of actualBundles) {
+                    try {
+                        const res = await fetch(bundle);
+                        if (res.ok) {
+                            const size = res.headers.get('content-length');
+                            log('success', `✓ ${bundle} (${Math.round(size/1024)}KB)`);
+                        } else {
+                            log('error', `✗ ${bundle} - Status: ${res.status}`);
+                        }
+                    } catch (error) {
+                        log('error', `✗ ${bundle} - ${error.message}`);
+                    }
+                }
+            } catch (error) {
+                log('error', `Failed to check bundles: ${error.message}`);
+            }
+        }
+        
+        async function checkAssets() {
+            log('info', 'Checking game assets...');
+            const assetStatus = document.getElementById('asset-status');
+            assetStatus.innerHTML = '';
+            
+            const criticalAssets = [
+                { path: '/assets/sprites/players/default/cool_pug.png', name: 'Player Sprite' },
+                { path: '/assets/sprites/boosters/banana.png', name: 'Banana Booster' },
+                { path: '/assets/sprites/skills/fire.png', name: 'Fire Skill' },
+                { path: '/assets/ui/icons/M token.png', name: 'M Token' },
+                { path: '/assets/maps/tracks/template1.png', name: 'Track Template' }
+            ];
+            
+            for (const asset of criticalAssets) {
+                const statusEl = document.createElement('span');
+                statusEl.className = 'asset-check asset-loading';
+                statusEl.textContent = asset.name;
+                assetStatus.appendChild(statusEl);
+                
+                try {
+                    const response = await fetch(asset.path);
+                    if (response.ok) {
+                        statusEl.className = 'asset-check asset-success';
+                        log('success', `✓ ${asset.name}: ${asset.path}`);
+                    } else {
+                        statusEl.className = 'asset-check asset-error';
+                        log('error', `✗ ${asset.name}: ${asset.path} - Status: ${response.status}`);
+                    }
+                } catch (error) {
+                    statusEl.className = 'asset-check asset-error';
+                    log('error', `✗ ${asset.name}: ${error.message}`);
+                }
+            }
+        }
+        
+        async function checkPhaser() {
+            log('info', 'Checking Phaser.js availability...');
+            
+            // Create a temporary iframe to test Phaser loading
+            const testFrame = document.createElement('iframe');
+            testFrame.style.display = 'none';
+            document.body.appendChild(testFrame);
+            
+            try {
+                // Load the main page in iframe
+                testFrame.src = '/';
+                
+                await new Promise((resolve, reject) => {
+                    testFrame.onload = resolve;
+                    testFrame.onerror = reject;
+                    setTimeout(reject, 5000); // 5 second timeout
+                });
+                
+                // Check if Phaser is available in iframe
+                const iframeWindow = testFrame.contentWindow;
+                if (iframeWindow.Phaser) {
+                    log('success', `✓ Phaser.js loaded - Version: ${iframeWindow.Phaser.VERSION}`);
+                } else {
+                    log('warning', '⚠ Phaser.js loaded but not accessible');
+                }
+            } catch (error) {
+                log('error', `✗ Failed to verify Phaser: ${error.message}`);
+            } finally {
+                document.body.removeChild(testFrame);
+            }
+        }
+        
+        function loadGame() {
+            const container = document.getElementById('game-container');
+            const frame = document.getElementById('game-frame');
+            
+            container.style.display = 'block';
+            frame.src = '/';
+            gameLoaded = true;
+            
+            log('info', 'Loading game in iframe...');
+            
+            frame.onload = () => {
+                log('success', 'Game iframe loaded');
+                
+                // Try to access game instance
+                try {
+                    const gameWindow = frame.contentWindow;
+                    if (gameWindow.game) {
+                        log('success', 'Game instance found in iframe');
+                    } else {
+                        log('warning', 'Game instance not found in iframe window');
+                    }
+                } catch (error) {
+                    log('error', `Cannot access iframe content: ${error.message}`);
+                }
+            };
+        }
+        
+        function reloadGame() {
+            if (!gameLoaded) {
+                loadGame();
+                return;
+            }
+            
+            const frame = document.getElementById('game-frame');
+            frame.src = frame.src;
+            log('info', 'Reloading game iframe...');
+        }
+        
+        function inspectGame() {
+            const frame = document.getElementById('game-frame');
+            if (!gameLoaded) {
+                log('warning', 'Game not loaded yet. Load the game first.');
+                return;
+            }
+            
+            try {
+                const gameWindow = frame.contentWindow;
+                
+                // Log game state
+                if (gameWindow.game) {
+                    const game = gameWindow.game;
+                    log('info', `Game State: ${game.isRunning ? 'Running' : 'Not Running'}`);
+                    log('info', `Active Scene: ${game.scene.getScenes(true).map(s => s.sys.settings.key).join(', ')}`);
+                    log('info', `FPS: ${Math.round(game.loop.actualFps)}`);
+                }
+                
+                if (gameWindow.Phaser) {
+                    log('info', `Phaser Version: ${gameWindow.Phaser.VERSION}`);
+                }
+                
+                // Check for errors
+                if (gameWindow.document.querySelector('.error-message')) {
+                    log('error', 'Error message found in game');
+                }
+                
+            } catch (error) {
+                log('error', `Failed to inspect game: ${error.message}`);
+            }
+        }
+        
+        function clearLogs() {
+            ['system-status', 'console-log', 'network-log', 'asset-status'].forEach(id => {
+                const element = document.getElementById(id);
+                if (element) element.innerHTML = '';
+            });
+            log('info', 'Logs cleared');
+        }
+    </script>
+</body>
+</html>

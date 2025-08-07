@@ -13,12 +13,21 @@ export class PreloadScene extends Phaser.Scene {
     }
 
     preload() {
+        console.log('[PreloadScene] Starting asset preload...');
+        
         // Create loading text
         const loadingText = this.add.text(960, 540, 'Loading...', {
             fontSize: '32px',
             fontFamily: 'Courier New',
             color: '#00ff00',
             fontWeight: 'bold'
+        }).setOrigin(0.5);
+        
+        // Add debug text to show what's loading
+        const debugText = this.add.text(960, 640, '', {
+            fontSize: '16px',
+            fontFamily: 'Courier New',
+            color: '#ffff00'
         }).setOrigin(0.5);
 
         const progressBar = this.add.graphics();
@@ -36,10 +45,23 @@ export class PreloadScene extends Phaser.Scene {
             progressBar.clear();
             progressBar.fillStyle(0x00ff00);
             progressBar.fillRect(760, 580, 400 * value, 50);
+            
+            // Update loading text with percentage
+            const percentage = Math.round(value * 100);
+            loadingText.setText(`Loading... ${percentage}%`);
+        });
+        
+        // Track file loading
+        this.load.on('fileprogress', (file) => {
+            if (debugText) {
+                debugText.setText(`Loading: ${file.key}`);
+            }
         });
 
         this.load.on('complete', () => {
+            console.log('[PreloadScene] Asset loading complete');
             loadingText.destroy();
+            if (debugText) debugText.destroy();
             progressBar.destroy();
             progressBox.destroy();
         });
@@ -52,12 +74,50 @@ export class PreloadScene extends Phaser.Scene {
     }
 
     create() {
-        // Fade out loading screen and transition to main menu
-        this.cameras.main.fadeOut(500, 0, 0, 0);
+        console.log('[PreloadScene] Create phase - transitioning to MainMenuScene');
+        console.log('[PreloadScene] Environment:', process.env.NODE_ENV || 'production');
+        console.log('[PreloadScene] Available textures:', Object.keys(this.textures.list));
+        console.log('[PreloadScene] Available scenes:', this.scene.manager.keys);
         
-        this.cameras.main.once('camerafadeoutcomplete', () => {
-            this.scene.start('MainMenuScene');
-        });
+        try {
+            // Validate that MainMenuScene is available
+            if (!this.scene.manager.keys.includes('MainMenuScene')) {
+                console.error('[PreloadScene] MainMenuScene not found in scene manager!');
+                console.log('[PreloadScene] Available scenes:', this.scene.manager.keys);
+                throw new Error('MainMenuScene not found');
+            }
+            
+            console.log('[PreloadScene] ✅ MainMenuScene found, starting transition...');
+            
+            // Add a small delay to ensure everything is ready
+            this.time.delayedCall(100, () => {
+                console.log('[PreloadScene] 🎬 Starting MainMenuScene transition...');
+                
+                // Fade out loading screen and transition to main menu
+                this.cameras.main.fadeOut(500, 0, 0, 0);
+                
+                this.cameras.main.once('camerafadeoutcomplete', () => {
+                    console.log('[PreloadScene] 🎭 Camera fade complete, starting MainMenuScene...');
+                    this.scene.start('MainMenuScene');
+                });
+                
+                // Fallback timeout in case fade doesn't complete
+                this.time.delayedCall(1000, () => {
+                    console.log('[PreloadScene] ⚠️ Fade timeout, forcing transition to MainMenuScene...');
+                    this.scene.start('MainMenuScene');
+                });
+            });
+            
+        } catch (error) {
+            console.error('[PreloadScene] ❌ Error in create phase:', error);
+            console.error('[PreloadScene] Error stack:', error.stack);
+            
+            // Try direct transition if fade fails
+            console.log('[PreloadScene] 🔄 Attempting direct transition to MainMenuScene...');
+            this.time.delayedCall(500, () => {
+                this.scene.start('MainMenuScene');
+            });
+        }
     }
 
     /**
@@ -202,26 +262,10 @@ export class PreloadScene extends Phaser.Scene {
      * Load external assets (sounds, images, etc.)
      */
     loadExternalAssets() {
-        // Load sounds if they exist
-        const soundPath = 'src/assets/sounds/';
-        
-        // Engine/race sounds
-        if (this.cache.audio.exists('engine_loop')) {
-            // Already loaded
-        } else {
-            // Create placeholder or load actual files
-            this.load.audio('engine_loop', [`${soundPath}engine.mp3`, `${soundPath}engine.ogg`]);
-            this.load.audio('booster_collect', [`${soundPath}booster.mp3`, `${soundPath}booster.ogg`]);
-            this.load.audio('skill_activate', [`${soundPath}skill.mp3`, `${soundPath}skill.ogg`]);
-            this.load.audio('race_start', [`${soundPath}start.mp3`, `${soundPath}start.ogg`]);
-            this.load.audio('race_win', [`${soundPath}win.mp3`, `${soundPath}win.ogg`]);
-        }
-        
-        // Load UI icons if they exist
-        const iconPath = 'src/assets/ui/icons/';
-        this.load.image('icon_settings', `${iconPath}settings.png`);
-        this.load.image('icon_leaderboard', `${iconPath}leaderboard.png`);
-        this.load.image('icon_multiplayer', `${iconPath}multiplayer.png`);
+        // Use production-friendly paths (webpack will copy assets to /assets/)
+        const soundPath = '/assets/sounds/';
+        const iconPath = '/assets/ui/icons/';
+        const spritePath = '/assets/sprites/';
         
         // Set loading to not fail on missing files
         this.load.on('filecomplete', (key, type, data) => {
@@ -229,8 +273,53 @@ export class PreloadScene extends Phaser.Scene {
         });
         
         this.load.on('loaderror', (file) => {
-            console.warn(`[PreloadScene] Failed to load: ${file.src}`);
+            console.warn(`[PreloadScene] Failed to load: ${file.src} - Continuing without this asset`);
+            // Don't let missing assets break the game
         });
+        
+        // Try to load actual sprite assets if they exist
+        try {
+            // Load player sprites if available
+            this.load.image('player_pug', `${spritePath}players/default/cool_pug.png`);
+            this.load.image('player_smoking', `${spritePath}players/default/Smoking_pug.png`);
+            this.load.image('player_ice', `${spritePath}players/default/ice.png`);
+            this.load.image('player_intern', `${spritePath}players/default/intern.png`);
+            this.load.image('player_lv4', `${spritePath}players/default/lv4pug.png`);
+            this.load.image('player_spike', `${spritePath}players/default/spike monster.png`);
+            
+            // Load booster sprites
+            this.load.image('booster_banana_real', `${spritePath}boosters/banana.png`);
+            this.load.image('booster_toilet_real', `${spritePath}boosters/toilet-paper.png`);
+            this.load.image('booster_poo_real', `${spritePath}boosters/shit2.png`);
+            this.load.image('booster_diamond_real', `${spritePath}boosters/diamondfist.png`);
+            this.load.image('booster_crik_real', `${spritePath}boosters/Crik-cutout2.png`);
+            
+            // Load skill sprites
+            this.load.image('skill_thunder_real', `${spritePath}skills/thuner.png`);
+            this.load.image('skill_fire_real', `${spritePath}skills/fire.png`);
+            this.load.image('skill_bubble_real', `${spritePath}skills/bubble.png`);
+            this.load.image('skill_magnet_real', `${spritePath}skills/magnet.png`);
+            this.load.image('skill_teleport_real', `${spritePath}skills/teleport.png`);
+            
+            // Load M token
+            this.load.image('mtoken_real', `${iconPath}M token.png`);
+            
+            // Load UI panel
+            this.load.image('ui_panel', `${spritePath}ui/panels/1500x500.jpeg`);
+        } catch (error) {
+            console.warn('[PreloadScene] Error setting up asset loading:', error);
+            // Continue with programmatically generated assets
+        }
+        
+        // Engine/race sounds - these may not exist yet
+        if (!this.cache.audio.exists('engine_loop')) {
+            // Try to load but don't fail if missing
+            this.load.audio('engine_loop', [`${soundPath}engine.mp3`, `${soundPath}engine.ogg`]);
+            this.load.audio('booster_collect', [`${soundPath}booster.mp3`, `${soundPath}booster.ogg`]);
+            this.load.audio('skill_activate', [`${soundPath}skill.mp3`, `${soundPath}skill.ogg`]);
+            this.load.audio('race_start', [`${soundPath}start.mp3`, `${soundPath}start.ogg`]);
+            this.load.audio('race_win', [`${soundPath}win.mp3`, `${soundPath}win.ogg`]);
+        }
     }
 
     /**

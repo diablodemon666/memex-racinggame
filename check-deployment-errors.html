@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Memex Racing - Deployment Error Checker</title>
+    <style>
+        body {
+            font-family: monospace;
+            background: #111;
+            color: #0f0;
+            padding: 20px;
+            margin: 0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 { color: #00ff00; }
+        h2 { color: #00ffff; }
+        .error { color: #ff0000; }
+        .success { color: #00ff00; }
+        .warning { color: #ffff00; }
+        .log-box {
+            background: #000;
+            border: 1px solid #0f0;
+            padding: 10px;
+            margin: 10px 0;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        button {
+            background: #00ff00;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            font-family: monospace;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #00ff00cc;
+        }
+        iframe {
+            width: 100%;
+            height: 600px;
+            border: 2px solid #0f0;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Memex Racing - Deployment Error Checker</h1>
+        
+        <div>
+            <h2>🌐 Deployment URL</h2>
+            <p id="deployment-url">https://memex-racing-game-3hwaevm1h-diablodemon9966-8930s-projects.vercel.app</p>
+        </div>
+
+        <div>
+            <h2>🧪 Tests</h2>
+            <button onclick="checkDeployment()">Run All Checks</button>
+            <button onclick="checkAssets()">Check Assets</button>
+            <button onclick="checkAPI()">Check API</button>
+            <button onclick="clearLogs()">Clear Logs</button>
+        </div>
+
+        <div>
+            <h2>📊 Network Requests</h2>
+            <div id="network-log" class="log-box"></div>
+        </div>
+
+        <div>
+            <h2>🚨 Console Errors</h2>
+            <div id="console-log" class="log-box"></div>
+        </div>
+
+        <div>
+            <h2>✅ Status Checks</h2>
+            <div id="status-checks" class="log-box"></div>
+        </div>
+
+        <div>
+            <h2>🎮 Game Frame</h2>
+            <iframe id="game-frame" src="https://memex-racing-game-3hwaevm1h-diablodemon9966-8930s-projects.vercel.app"></iframe>
+        </div>
+    </div>
+
+    <script>
+        const DEPLOYMENT_URL = 'https://memex-racing-game-3hwaevm1h-diablodemon9966-8930s-projects.vercel.app';
+        
+        function log(type, message, target = 'console-log') {
+            const logDiv = document.getElementById(target);
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : 'warning';
+            logDiv.innerHTML += `<span class="${className}">[${timestamp}] ${message}</span>\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function clearLogs() {
+            document.getElementById('network-log').innerHTML = '';
+            document.getElementById('console-log').innerHTML = '';
+            document.getElementById('status-checks').innerHTML = '';
+        }
+
+        async function checkDeployment() {
+            clearLogs();
+            log('info', 'Starting deployment checks...', 'status-checks');
+            
+            // Check main page
+            try {
+                const response = await fetch(DEPLOYMENT_URL);
+                log('success', `Main page: ${response.status} ${response.statusText}`, 'status-checks');
+                
+                const html = await response.text();
+                log('info', `Page size: ${html.length} bytes`, 'status-checks');
+                
+                // Check for common errors in HTML
+                if (html.includes('404')) {
+                    log('error', 'Page contains 404 error', 'status-checks');
+                }
+                if (html.includes('Cannot find module')) {
+                    log('error', 'Module loading error detected', 'status-checks');
+                }
+                if (html.includes('Loading Memex Racing')) {
+                    log('warning', 'Page stuck on loading screen', 'status-checks');
+                }
+            } catch (error) {
+                log('error', `Failed to fetch main page: ${error.message}`, 'status-checks');
+            }
+
+            // Check critical assets
+            await checkAssets();
+            
+            // Check API endpoints
+            await checkAPI();
+        }
+
+        async function checkAssets() {
+            log('info', 'Checking game assets...', 'network-log');
+            
+            const criticalAssets = [
+                '/bundle.js',
+                '/main.bundle.js',
+                '/phaser.bundle.js',
+                '/game-engine.bundle.js',
+                '/assets/sprites/players/default/cool_pug.png',
+                '/assets/maps/tracks/template1.png',
+                '/favicon.ico'
+            ];
+
+            for (const asset of criticalAssets) {
+                try {
+                    const url = DEPLOYMENT_URL + asset;
+                    const response = await fetch(url, { method: 'HEAD' });
+                    
+                    if (response.ok) {
+                        log('success', `✓ ${asset} (${response.status})`, 'network-log');
+                    } else {
+                        log('error', `✗ ${asset} (${response.status})`, 'network-log');
+                    }
+                } catch (error) {
+                    log('error', `✗ ${asset} - ${error.message}`, 'network-log');
+                }
+            }
+        }
+
+        async function checkAPI() {
+            log('info', 'Checking API endpoints...', 'network-log');
+            
+            const apiEndpoints = [
+                '/api/health',
+                '/api/game/rooms',
+                '/api/auth/status'
+            ];
+
+            for (const endpoint of apiEndpoints) {
+                try {
+                    const url = DEPLOYMENT_URL + endpoint;
+                    const response = await fetch(url);
+                    
+                    if (response.ok) {
+                        log('success', `✓ ${endpoint} (${response.status})`, 'network-log');
+                        const data = await response.json();
+                        log('info', `Response: ${JSON.stringify(data)}`, 'network-log');
+                    } else {
+                        log('error', `✗ ${endpoint} (${response.status})`, 'network-log');
+                    }
+                } catch (error) {
+                    log('error', `✗ ${endpoint} - ${error.message}`, 'network-log');
+                }
+            }
+        }
+
+        // Listen for messages from iframe
+        window.addEventListener('message', (event) => {
+            if (event.origin.includes('vercel.app')) {
+                log('info', `Game message: ${JSON.stringify(event.data)}`, 'console-log');
+            }
+        });
+
+        // Override console methods to capture iframe logs
+        const iframe = document.getElementById('game-frame');
+        iframe.onload = () => {
+            try {
+                // Try to access iframe console (might be blocked by CORS)
+                const iframeWindow = iframe.contentWindow;
+                if (iframeWindow) {
+                    log('success', 'Iframe loaded successfully', 'console-log');
+                }
+            } catch (error) {
+                log('warning', 'Cannot access iframe directly due to CORS', 'console-log');
+            }
+        };
+
+        // Auto-run checks on load
+        window.onload = () => {
+            setTimeout(checkDeployment, 1000);
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,3 @@
+Trigger deployment with build fixes
+Date: 2025-08-06
+Fix: Added package-lock.json and updated build command

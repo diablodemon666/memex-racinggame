@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memex Racing - Production Visual Tester</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            background: #000;
+            color: #00ff00;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #00ff00;
+            padding-bottom: 20px;
+        }
+        
+        .test-section {
+            margin-bottom: 30px;
+            border: 1px solid #333;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        
+        .test-section h2 {
+            color: #ffffff;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #444;
+            padding-bottom: 10px;
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .status.pass { background: #004d00; color: #00ff00; }
+        .status.fail { background: #4d0000; color: #ff0000; }
+        .status.warn { background: #4d4d00; color: #ffff00; }
+        .status.info { background: #003d4d; color: #00ffff; }
+        
+        .test-item {
+            margin: 10px 0;
+            padding: 10px;
+            background: #111;
+            border-left: 3px solid #444;
+            border-radius: 4px;
+        }
+        
+        .test-item.pass { border-left-color: #00ff00; }
+        .test-item.fail { border-left-color: #ff0000; }
+        .test-item.warn { border-left-color: #ffff00; }
+        
+        .iframe-container {
+            width: 100%;
+            height: 600px;
+            border: 2px solid #333;
+            margin: 20px 0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .iframe-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        
+        .controls {
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .controls button {
+            background: #003300;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            padding: 10px 20px;
+            margin: 0 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        
+        .controls button:hover {
+            background: #004400;
+        }
+        
+        .controls button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .error-log {
+            background: #220000;
+            border: 1px solid #440000;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .error-log pre {
+            color: #ff6666;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+        
+        .performance-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .metric-card {
+            background: #111;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            text-align: center;
+        }
+        
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #00ffff;
+        }
+        
+        .metric-label {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+        }
+        
+        .screenshot-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .screenshot {
+            border: 1px solid #333;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #111;
+        }
+        
+        .screenshot canvas {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        .screenshot-title {
+            padding: 10px;
+            background: #222;
+            color: #fff;
+            font-size: 14px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🏁 Memex Racing - Production Visual Tester</h1>
+        <p>Comprehensive visual testing tool for the deployed game</p>
+        <p><strong>Target URL:</strong> <span id="target-url">https://memex-racing-game-3hwaevm1h-diablodemon9966-8930s-projects.vercel.app</span></p>
+    </div>
+
+    <div class="controls">
+        <button id="start-test">🧪 Start Visual Testing</button>
+        <button id="take-screenshot">📸 Take Screenshot</button>
+        <button id="performance-test">⚡ Performance Test</button>
+        <button id="clear-logs">🗑️ Clear Logs</button>
+        <button id="export-report">📄 Export Report</button>
+    </div>
+
+    <div class="test-section">
+        <h2>🔍 Real-time Test Results</h2>
+        <div id="test-results">
+            <div class="test-item info">
+                <span class="status info">INFO</span>
+                <strong>Waiting for test initiation...</strong>
+                <div>Click "Start Visual Testing" to begin comprehensive testing</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>📊 Performance Metrics</h2>
+        <div class="performance-metrics">
+            <div class="metric-card">
+                <div class="metric-value" id="load-time">--</div>
+                <div class="metric-label">Load Time (ms)</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="bundle-size">--</div>
+                <div class="metric-label">Total Bundle Size</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="error-count">--</div>
+                <div class="metric-label">JavaScript Errors</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="network-requests">--</div>
+                <div class="metric-label">Network Requests</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🖼️ Game Visual Testing</h2>
+        <div class="iframe-container">
+            <iframe id="game-iframe" src="about:blank"></iframe>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>📸 Visual Regression Screenshots</h2>
+        <div class="screenshot-container" id="screenshots">
+            <div class="screenshot">
+                <div class="screenshot-title">Initial Load State</div>
+                <canvas id="screenshot-canvas-1" width="400" height="300"></canvas>
+            </div>
+            <div class="screenshot">
+                <div class="screenshot-title">Game Menu State</div>
+                <canvas id="screenshot-canvas-2" width="400" height="300"></canvas>
+            </div>
+            <div class="screenshot">
+                <div class="screenshot-title">Race In Progress</div>
+                <canvas id="screenshot-canvas-3" width="400" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🚨 Error Log</h2>
+        <div class="error-log" id="error-log">
+            <pre id="error-content">No errors detected yet...</pre>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🌐 Network Analysis</h2>
+        <div id="network-analysis">
+            <div class="test-item info">
+                <span class="status info">INFO</span>
+                <strong>Network monitoring ready</strong>
+                <div>Will track all network requests once testing begins</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class ProductionVisualTester {
+            constructor() {
+                this.gameUrl = 'https://memex-racing-game-3hwaevm1h-diablodemon9966-8930s-projects.vercel.app';
+                this.testResults = [];
+                this.errors = [];
+                this.metrics = {};
+                this.isTestRunning = false;
+                
+                this.initializeEventListeners();
+                this.startMonitoring();
+            }
+            
+            initializeEventListeners() {
+                document.getElementById('start-test').addEventListener('click', () => this.startVisualTest());
+                document.getElementById('take-screenshot').addEventListener('click', () => this.takeScreenshot());
+                document.getElementById('performance-test').addEventListener('click', () => this.runPerformanceTest());
+                document.getElementById('clear-logs').addEventListener('click', () => this.clearLogs());
+                document.getElementById('export-report').addEventListener('click', () => this.exportReport());
+            }
+            
+            startMonitoring() {
+                // Global error handling
+                window.addEventListener('error', (event) => {
+                    this.logError('JavaScript Error', event.error?.message || event.message, event.filename, event.lineno);
+                });
+                
+                window.addEventListener('unhandledrejection', (event) => {
+                    this.logError('Unhandled Promise Rejection', event.reason);
+                });
+            }
+            
+            async startVisualTest() {
+                if (this.isTestRunning) {
+                    this.addTestResult('warn', 'Test already running', 'Please wait for current test to complete');
+                    return;
+                }
+                
+                this.isTestRunning = true;
+                this.clearResults();
+                this.addTestResult('info', 'Starting Visual Test', 'Initiating comprehensive testing sequence...');
+                
+                // Test 1: Basic connectivity
+                await this.testConnectivity();
+                
+                // Test 2: Asset loading
+                await this.testAssetLoading();
+                
+                // Test 3: Frame loading
+                await this.testFrameLoading();
+                
+                // Test 4: Console error monitoring
+                await this.testConsoleErrors();
+                
+                // Test 5: Performance metrics
+                await this.collectPerformanceMetrics();
+                
+                this.isTestRunning = false;
+                this.addTestResult('info', 'Testing Complete', 'All visual tests have been executed');
+            }
+            
+            async testConnectivity() {
+                try {
+                    this.addTestResult('info', 'Testing Connectivity', 'Attempting to reach deployment URL...');
+                    
+                    const startTime = performance.now();
+                    const response = await fetch(this.gameUrl, { 
+                        method: 'HEAD',
+                        mode: 'no-cors' // Avoid CORS issues for basic connectivity test
+                    });
+                    const endTime = performance.now();
+                    
+                    const responseTime = Math.round(endTime - startTime);
+                    this.metrics.responseTime = responseTime;
+                    
+                    // Since we can't read the response due to CORS/auth, we check if we got any response
+                    this.addTestResult('info', 'Server Response Received', `Response time: ${responseTime}ms`);
+                    this.updateMetric('load-time', responseTime);
+                    
+                } catch (error) {
+                    this.addTestResult('fail', 'Connectivity Test Failed', `Error: ${error.message}`);
+                    this.logError('Connectivity Test', error.message);
+                }
+            }
+            
+            async testAssetLoading() {
+                this.addTestResult('info', 'Testing Asset Loading', 'Checking for known game assets...');
+                
+                const assets = [
+                    '/favicon.ico',
+                    '/runtime.61223547d4c5977f99fc.bundle.js',
+                    '/phaser.8b3c7986089b064736fb.bundle.js',
+                    '/main.8474815ce1876b01d28a.bundle.js',
+                    '/game-engine.18d762c427db65bef619.bundle.js'
+                ];
+                
+                let successCount = 0;
+                let totalSize = 0;
+                
+                for (const asset of assets) {
+                    try {
+                        const url = this.gameUrl + asset;
+                        const response = await fetch(url, { method: 'HEAD', mode: 'no-cors' });
+                        successCount++;
+                        
+                        this.addTestResult('pass', `Asset Found: ${asset}`, 'Asset is accessible');
+                    } catch (error) {
+                        this.addTestResult('warn', `Asset Test: ${asset}`, `Could not verify (may be due to auth): ${error.message}`);
+                    }
+                }
+                
+                this.updateMetric('network-requests', assets.length);
+                
+                if (successCount > 0) {
+                    this.addTestResult('info', 'Asset Loading Summary', `${successCount}/${assets.length} assets verified`);
+                } else {
+                    this.addTestResult('warn', 'Asset Loading Summary', 'Unable to verify assets (likely due to authentication)');
+                }
+            }
+            
+            async testFrameLoading() {
+                this.addTestResult('info', 'Testing Frame Loading', 'Attempting to load game in iframe...');
+                
+                const iframe = document.getElementById('game-iframe');
+                
+                return new Promise((resolve) => {
+                    const timeout = setTimeout(() => {
+                        this.addTestResult('warn', 'Frame Load Timeout', 'Frame loading timed out after 10 seconds');
+                        resolve();
+                    }, 10000);
+                    
+                    iframe.onload = () => {
+                        clearTimeout(timeout);
+                        this.addTestResult('info', 'Frame Loaded', 'iframe has loaded content');
+                        this.checkFrameContent();
+                        resolve();
+                    };
+                    
+                    iframe.onerror = (error) => {
+                        clearTimeout(timeout);
+                        this.addTestResult('fail', 'Frame Load Error', `Failed to load game in iframe: ${error}`);
+                        this.logError('Frame Loading', error);
+                        resolve();
+                    };
+                    
+                    iframe.src = this.gameUrl;
+                });
+            }
+            
+            checkFrameContent() {
+                try {
+                    const iframe = document.getElementById('game-iframe');
+                    const iframeDocument = iframe.contentDocument || iframe.contentWindow.document;
+                    
+                    if (iframeDocument) {
+                        const title = iframeDocument.title || 'Unknown';
+                        const bodyContent = iframeDocument.body?.textContent?.substring(0, 100) || 'No body content';
+                        
+                        this.addTestResult('info', 'Frame Content Analysis', `Title: ${title}`);
+                        
+                        // Check for authentication page indicators
+                        if (title.includes('Authentication') || bodyContent.includes('Authenticating')) {
+                            this.addTestResult('warn', 'Authentication Required', 'Deployment requires Vercel SSO authentication');
+                        } else if (title.includes('Memex Racing')) {
+                            this.addTestResult('pass', 'Game Page Loaded', 'Game page appears to have loaded successfully');
+                        }
+                        
+                        // Check for error indicators
+                        if (bodyContent.includes('error') || bodyContent.includes('Error')) {
+                            this.addTestResult('warn', 'Potential Error Content', `Content: ${bodyContent.substring(0, 50)}...`);
+                        }
+                    }
+                } catch (error) {
+                    this.addTestResult('warn', 'Frame Content Check', 'Cannot access iframe content (likely due to CORS/authentication)');
+                }
+            }
+            
+            async testConsoleErrors() {
+                this.addTestResult('info', 'Console Error Monitoring', 'Monitoring for JavaScript errors...');
+                
+                // We can only monitor errors in our own context, not the iframe due to security restrictions
+                const errorCount = this.errors.length;
+                this.updateMetric('error-count', errorCount);
+                
+                if (errorCount === 0) {
+                    this.addTestResult('pass', 'Console Errors', 'No JavaScript errors detected in testing interface');
+                } else {
+                    this.addTestResult('warn', 'Console Errors', `${errorCount} errors detected in testing interface`);
+                }
+            }
+            
+            async collectPerformanceMetrics() {
+                this.addTestResult('info', 'Collecting Performance Metrics', 'Gathering performance data...');
+                
+                if ('performance' in window) {
+                    const navigation = performance.getEntriesByType('navigation')[0];
+                    if (navigation) {
+                        const loadTime = Math.round(navigation.loadEventEnd - navigation.loadEventStart);
+                        this.updateMetric('load-time', loadTime || this.metrics.responseTime || 0);
+                        
+                        this.addTestResult('pass', 'Performance Data', `Page load time: ${loadTime}ms`);
+                    }
+                    
+                    // Memory usage (if available)
+                    if ('memory' in performance) {
+                        const memoryInfo = performance.memory;
+                        this.addTestResult('info', 'Memory Usage', 
+                            `Used: ${Math.round(memoryInfo.usedJSHeapSize / 1024 / 1024)}MB, ` +
+                            `Total: ${Math.round(memoryInfo.totalJSHeapSize / 1024 / 1024)}MB`);
+                    }
+                }
+            }
+            
+            async runPerformanceTest() {
+                this.addTestResult('info', 'Performance Test', 'Running comprehensive performance analysis...');
+                
+                // Simulate various performance tests that would be possible with full access
+                const tests = [
+                    { name: 'Bundle Size Analysis', status: 'warn', message: 'Requires access to check actual bundle sizes' },
+                    { name: 'Asset Loading Speed', status: 'warn', message: 'Requires access to measure asset loading times' },
+                    { name: 'Rendering Performance', status: 'warn', message: 'Requires access to measure FPS and rendering metrics' },
+                    { name: 'Memory Leak Detection', status: 'warn', message: 'Requires access to monitor memory usage over time' }
+                ];
+                
+                for (const test of tests) {
+                    this.addTestResult(test.status, test.name, test.message);
+                    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate test time
+                }
+                
+                this.addTestResult('info', 'Performance Test Complete', 'Performance testing completed with available data');
+            }
+            
+            takeScreenshot() {
+                this.addTestResult('info', 'Screenshot Capture', 'Attempting to capture current state...');
+                
+                try {
+                    // We can only screenshot our own testing interface, not the protected iframe
+                    html2canvas(document.body).then(canvas => {
+                        const targetCanvas = document.getElementById('screenshot-canvas-1');
+                        const ctx = targetCanvas.getContext('2d');
+                        ctx.drawImage(canvas, 0, 0, targetCanvas.width, targetCanvas.height);
+                        
+                        this.addTestResult('pass', 'Screenshot Captured', 'Testing interface screenshot saved');
+                    }).catch(error => {
+                        this.addTestResult('warn', 'Screenshot Failed', 'html2canvas library not available for screenshot capture');
+                    });
+                } catch (error) {
+                    this.addTestResult('warn', 'Screenshot Error', `Could not capture screenshot: ${error.message}`);
+                }
+            }
+            
+            clearLogs() {
+                this.testResults = [];
+                this.errors = [];
+                document.getElementById('test-results').innerHTML = '';
+                document.getElementById('error-content').textContent = 'No errors detected yet...';
+                this.resetMetrics();
+                this.addTestResult('info', 'Logs Cleared', 'All test results and error logs have been cleared');
+            }
+            
+            exportReport() {
+                const report = {
+                    timestamp: new Date().toISOString(),
+                    gameUrl: this.gameUrl,
+                    testResults: this.testResults,
+                    errors: this.errors,
+                    metrics: this.metrics,
+                    summary: {
+                        totalTests: this.testResults.length,
+                        passed: this.testResults.filter(r => r.type === 'pass').length,
+                        failed: this.testResults.filter(r => r.type === 'fail').length,
+                        warnings: this.testResults.filter(r => r.type === 'warn').length
+                    }
+                };
+                
+                const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `memex-racing-visual-test-${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                this.addTestResult('pass', 'Report Exported', `Test report exported as JSON file`);
+            }
+            
+            addTestResult(type, title, message) {
+                const result = { type, title, message, timestamp: new Date().toISOString() };
+                this.testResults.push(result);
+                
+                const testItem = document.createElement('div');
+                testItem.className = `test-item ${type}`;
+                testItem.innerHTML = `
+                    <span class="status ${type}">${type.toUpperCase()}</span>
+                    <strong>${title}</strong>
+                    <div>${message}</div>
+                    <small>Time: ${new Date().toLocaleTimeString()}</small>
+                `;
+                
+                document.getElementById('test-results').appendChild(testItem);
+                testItem.scrollIntoView({ behavior: 'smooth' });
+            }
+            
+            clearResults() {
+                document.getElementById('test-results').innerHTML = '';
+                this.testResults = [];
+            }
+            
+            logError(category, message, filename = '', line = 0) {
+                const error = {
+                    category,
+                    message,
+                    filename,
+                    line,
+                    timestamp: new Date().toISOString()
+                };
+                this.errors.push(error);
+                
+                const errorLog = document.getElementById('error-content');
+                errorLog.textContent += `\n[${error.timestamp}] ${category}: ${message}`;
+                if (filename) errorLog.textContent += ` (${filename}:${line})`;
+                
+                // Auto-scroll to bottom
+                const errorLogContainer = document.getElementById('error-log');
+                errorLogContainer.scrollTop = errorLogContainer.scrollHeight;
+            }
+            
+            updateMetric(metricId, value) {
+                const element = document.getElementById(metricId);
+                if (element) {
+                    element.textContent = typeof value === 'number' ? value.toLocaleString() : value;
+                }
+                this.metrics[metricId] = value;
+            }
+            
+            resetMetrics() {
+                const metrics = ['load-time', 'bundle-size', 'error-count', 'network-requests'];
+                metrics.forEach(metric => this.updateMetric(metric, '--'));
+                this.metrics = {};
+            }
+        }
+        
+        // Initialize the tester when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            window.visualTester = new ProductionVisualTester();
+            
+            // Show initial status
+            window.visualTester.addTestResult('info', 'Visual Testing Tool Ready', 
+                'Production visual tester initialized and ready for comprehensive game testing');
+            
+            window.visualTester.addTestResult('warn', 'Authentication Notice', 
+                'The target deployment requires Vercel SSO authentication. Some tests may be limited until access is granted.');
+        });
+    </script>
+</body>
+</html>

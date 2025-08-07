@@ -60,13 +60,7 @@ module.exports = (env, argv) => {
         template: './public/index.html',
         title: 'Memex Racing Game',
         favicon: './public/favicon.ico',
-        minify: isProduction
-          ? {
-              removeComments: true,
-              collapseWhitespace: true,
-              removeAttributeQuotes: true,
-            }
-          : false,
+        minify: false, // Disable HTML minification to fix clean-css dependency issue
       }),
       new CopyWebpackPlugin({
         patterns: [
@@ -83,8 +77,10 @@ module.exports = (env, argv) => {
         ],
       }),
       new webpack.DefinePlugin({
-        'process.env.NODE_ENV': JSON.stringify(argv.mode),
+        'process.env.NODE_ENV': JSON.stringify(argv.mode || 'production'),
         'process.env.VERSION': JSON.stringify(require('./package.json').version),
+        'process.env.BROWSER': JSON.stringify(true),
+        'process.env.DEBUG': JSON.stringify(isDevelopment),
       }),
       ...(isDevelopment ? [new webpack.HotModuleReplacementPlugin()] : []),
     ],

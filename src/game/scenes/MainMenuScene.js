@@ -17,75 +17,159 @@ export class MainMenuScene extends AuthenticatedScene {
     }
 
     create() {
-        // Call parent create for authentication setup
-        super.create();
+        console.log('[MainMenuScene] Starting create phase...');
+        console.log('[MainMenuScene] Environment:', process.env.NODE_ENV || 'production');
         
-        // Set retro background
-        this.cameras.main.setBackgroundColor('#001122');
+        try {
+            // Call parent create for authentication setup
+            console.log('[MainMenuScene] Calling parent create...');
+            super.create();
+            console.log('[MainMenuScene] ✅ Parent create completed');
+            
+            // Set retro background
+            console.log('[MainMenuScene] Setting background...');
+            this.cameras.main.setBackgroundColor('#001122');
         
-        // Add animated background elements
-        this.createAnimatedBackground();
-        
-        // Main title
-        const title = this.add.text(960, 200, 'MEMEX RACING', {
-            fontSize: '96px',
-            fontFamily: 'Courier New',
-            color: '#00ff00',
-            fontWeight: 'bold',
-            stroke: '#000000',
-            strokeThickness: 8
-        }).setOrigin(0.5);
-        
-        // Subtitle
-        const subtitle = this.add.text(960, 280, 'MULTIPLAYER BETTING GAME', {
-            fontSize: '32px',
-            fontFamily: 'Courier New',
-            color: '#ffff00',
-            fontWeight: 'bold'
-        }).setOrigin(0.5);
-        
-        // Animate title
-        this.tweens.add({
-            targets: title,
-            scaleX: 1.05,
-            scaleY: 1.05,
-            duration: 2000,
-            yoyo: true,
-            repeat: -1,
-            ease: 'Sine.easeInOut'
-        });
-        
-        // Create menu buttons
-        this.createMenuButtons();
-        
-        // User info panel
-        this.createUserInfoPanel();
-        
-        // Version info
-        this.add.text(50, 1030, `Version: ${process.env.VERSION || '0.1.0'}`, {
-            fontSize: '16px',
-            fontFamily: 'Courier New',
-            color: '#666666'
-        });
-        
-        // Instructions
-        this.add.text(960, 950, 'Use ARROW KEYS to navigate, ENTER to select, ESC for settings', {
-            fontSize: '18px',
-            fontFamily: 'Courier New',
-            color: '#888888'
-        }).setOrigin(0.5);
-        
-        // Setup input handlers
-        this.setupInputHandlers();
-        
-        // Play ambient music if available
-        this.playAmbientMusic();
-        
-        // Fade in
-        this.cameras.main.fadeIn(500, 0, 0, 0);
-        
-        // Emit event for integration
-        this.events.emit('MAIN_MENU_READY');
+            // Add animated background elements
+            console.log('[MainMenuScene] Creating animated background...');
+            this.createAnimatedBackground();
+            
+            // Main title
+            console.log('[MainMenuScene] Creating title...');
+            const title = this.add.text(960, 200, 'MEMEX RACING', {
+                fontSize: '96px',
+                fontFamily: 'Courier New',
+                color: '#00ff00',
+                fontWeight: 'bold',
+                stroke: '#000000',
+                strokeThickness: 8
+            }).setOrigin(0.5);
+            
+            // Subtitle
+            const subtitle = this.add.text(960, 280, 'MULTIPLAYER BETTING GAME', {
+                fontSize: '32px',
+                fontFamily: 'Courier New',
+                color: '#ffff00',
+                fontWeight: 'bold'
+            }).setOrigin(0.5);
+            
+            // Animate title
+            console.log('[MainMenuScene] Creating title animation...');
+            this.tweens.add({
+                targets: title,
+                scaleX: 1.05,
+                scaleY: 1.05,
+                duration: 2000,
+                yoyo: true,
+                repeat: -1,
+                ease: 'Sine.easeInOut'
+            });
+            
+            // Create menu buttons
+            console.log('[MainMenuScene] Creating menu buttons...');
+            this.createMenuButtons();
+            
+            // User info panel
+            console.log('[MainMenuScene] Creating user info panel...');
+            this.createUserInfoPanel();
+            
+            // Version info
+            this.add.text(50, 1030, `Version: ${process.env.VERSION || '0.1.0'}`, {
+                fontSize: '16px',
+                fontFamily: 'Courier New',
+                color: '#666666'
+            });
+            
+            // Instructions
+            this.add.text(960, 950, 'Use ARROW KEYS to navigate, ENTER to select, ESC for settings', {
+                fontSize: '18px',
+                fontFamily: 'Courier New',
+                color: '#888888'
+            }).setOrigin(0.5);
+            
+            // Setup input handlers
+            console.log('[MainMenuScene] Setting up input handlers...');
+            this.setupInputHandlers();
+            
+            // Play ambient music if available
+            console.log('[MainMenuScene] Playing ambient music...');
+            this.playAmbientMusic();
+            
+            // Fade in
+            console.log('[MainMenuScene] Starting fade in...');
+            this.cameras.main.fadeIn(500, 0, 0, 0);
+            
+            // Emit event for integration
+            console.log('[MainMenuScene] Emitting MAIN_MENU_READY event...');
+            this.events.emit('MAIN_MENU_READY');
+            
+            console.log('[MainMenuScene] ✅ Create phase completed successfully');
+            
+        } catch (error) {
+            console.error('[MainMenuScene] ❌ Error in create phase:', error);
+            console.error('[MainMenuScene] Error stack:', error.stack);
+            
+            // Create a minimal fallback UI
+            this.createFallbackUI(error);
+        }
+    }
+
+    /**
+     * Create fallback UI when main create fails
+     * @param {Error} error - The error that caused the fallback
+     */
+    createFallbackUI(error) {
+        try {
+            console.log('[MainMenuScene] Creating fallback UI...');
+            
+            // Simple background
+            this.cameras.main.setBackgroundColor('#001122');
+            
+            // Error title
+            this.add.text(960, 300, 'MEMEX RACING', {
+                fontSize: '96px',
+                fontFamily: 'Courier New',
+                color: '#00ff00',
+                fontWeight: 'bold'
+            }).setOrigin(0.5);
+            
+            // Error message
+            this.add.text(960, 450, 'LOADING ERROR OCCURRED', {
+                fontSize: '32px',
+                fontFamily: 'Courier New',
+                color: '#ff4444',
+                fontWeight: 'bold'
+            }).setOrigin(0.5);
+            
+            // Simple button to retry
+            const retryButton = this.add.text(960, 600, 'RELOAD PAGE', {
+                fontSize: '24px',
+                fontFamily: 'Courier New',
+                color: '#ffffff',
+                backgroundColor: '#ff4444',
+                padding: { x: 20, y: 10 }
+            }).setOrigin(0.5).setInteractive();
+            
+            retryButton.on('pointerdown', () => {
+                window.location.reload();
+            });
+            
+            // Error details for debugging
+            if (process.env.NODE_ENV !== 'production') {
+                this.add.text(960, 750, `Error: ${error.message}`, {
+                    fontSize: '16px',
+                    fontFamily: 'Courier New',
+                    color: '#ffff00'
+                }).setOrigin(0.5);
+            }
+            
+            console.log('[MainMenuScene] ✅ Fallback UI created');
+            
+        } catch (fallbackError) {
+            console.error('[MainMenuScene] ❌ Failed to create fallback UI:', fallbackError);
+            // Last resort - just set background
+            this.cameras.main.setBackgroundColor('#ff0000');
+        }
     }
 
     /**
